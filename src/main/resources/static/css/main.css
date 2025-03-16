@@ -1,0 +1,225 @@
+/* Main CSS for Theatre Management System */
+
+/* Global Styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #f8f9fa;
+    color: #343a40;
+}
+
+.min-vh-100 {
+    min-height: 100vh;
+}
+
+/* Card Hover Effects */
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Movie Cards */
+.card-img-top {
+    height: 300px;
+    object-fit: cover;
+}
+
+/* Seat Selection Styles */
+.seat-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.screen {
+    background-color: #d1d1d1;
+    color: #333;
+    padding: 5px 20px;
+    width: 80%;
+    text-align: center;
+    border-radius: 5px;
+    margin-bottom: 25px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.seat-row {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.row-name {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    margin-right: 10px;
+    font-weight: bold;
+}
+
+.seat {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px 8px 0 0;
+    background-color: #ced4da;
+    transition: all 0.3s ease;
+    color: #fff;
+    font-size: 0.75rem;
+}
+
+.seat:hover {
+    transform: scale(1.05);
+}
+
+.seat.selected {
+    background-color: #0d6efd;
+}
+
+.seat.booked {
+    background-color: #dc3545;
+    cursor: not-allowed;
+}
+
+.seat.vip {
+    background-color: #6f42c1;
+}
+
+.seat.premium {
+    background-color: #fd7e14;
+}
+
+.seat.accessible {
+    background-color: #20c997;
+}
+
+.seat-legend {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.legend-seat {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px 4px 0 0;
+}
+
+/* Custom Buttons */
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0b5ed7;
+}
+
+/* Admin Dashboard */
+.dashboard-card {
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+}
+
+.dashboard-card i {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.dashboard-card.users {
+    background: linear-gradient(45deg, #4e73df, #224abe);
+}
+
+.dashboard-card.movies {
+    background: linear-gradient(45deg, #1cc88a, #169969);
+}
+
+.dashboard-card.theatres {
+    background: linear-gradient(45deg, #36b9cc, #258391);
+}
+
+.dashboard-card.bookings {
+    background: linear-gradient(45deg, #f6c23e, #dda20a);
+}
+
+/* Custom Alerts */
+.alert {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.alert-success {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+/* Booking Details */
+.booking-details {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.booking-header {
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.booking-number {
+    background-color: #f8f9fa;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-family: monospace;
+}
+
+.booking-seats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.booking-seat {
+    background-color: #e9ecef;
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-img-top {
+        height: 200px;
+    }
+
+    .seat {
+        width: 30px;
+        height: 30px;
+        font-size: 0.65rem;
+    }
+}

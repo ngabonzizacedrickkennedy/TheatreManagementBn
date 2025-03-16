@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Home')">
+  <title>Home - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1">
+  <!-- Hero Section -->
+  <section class="py-5 bg-dark text-white">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6">
+          <h1 class="display-4 fw-bold">Experience Movies Like Never Before</h1>
+          <p class="lead">Book your tickets online and enjoy the latest blockbusters in our state-of-the-art theatres.</p>
+          <a th:href="@{/movies}" class="btn btn-primary btn-lg">Browse Movies</a>
+        </div>
+        <div class="col-lg-6">
+          <img src="https://placehold.co/600x400" alt="Movie Theatre" class="img-fluid rounded shadow">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Now Playing Section -->
+  <section class="py-5">
+    <div class="container">
+      <h2 class="mb-4">Now Playing</h2>
+      <div class="row" th:if="${!nowPlaying.empty}">
+        <div class="col-md-4 col-lg-3 mb-4" th:each="movie : ${nowPlaying}">
+          <div class="card h-100 shadow-sm">
+            <img th:src="${movie.posterImageUrl != null ? movie.posterImageUrl : 'https://placehold.co/300x450?text=No+Poster'}"
+                 class="card-img-top" alt="Movie Poster">
+            <div class="card-body">
+              <h5 class="card-title" th:text="${movie.title}">Movie Title</h5>
+              <p class="card-text text-muted">
+                <span th:text="${movie.genre}">Genre</span> |
+                <span th:text="${movie.durationMinutes + ' min'}">Duration</span>
+              </p>
+              <p class="card-text" th:text="${#strings.abbreviate(movie.description, 100)}">Description</p>
+            </div>
+            <div class="card-footer bg-white border-top-0">
+              <a th:href="@{/movies/{id}(id=${movie.id})}" class="btn btn-primary w-100">View Details</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="text-center" th:if="${nowPlaying.empty}">
+        <p class="lead">No movies currently playing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Coming Soon Section -->
+  <section class="py-5 bg-light">
+    <div class="container">
+      <h2 class="mb-4">Coming Soon</h2>
+      <div class="row" th:if="${!upcoming.empty}">
+        <div class="col-md-4 col-lg-3 mb-4" th:each="movie : ${upcoming}">
+          <div class="card h-100 shadow-sm">
+            <div class="position-relative">
+              <img th:src="${movie.posterImageUrl != null ? movie.posterImageUrl : 'https://placehold.co/300x450?text=No+Poster'}"
+                   class="card-img-top" alt="Movie Poster">
+              <div class="position-absolute top-0 end-0 bg-warning text-dark px-2 py-1 m-2 rounded">
+                Coming Soon
+              </div>
+            </div>
+            <div class="card-body">
+              <h5 class="card-title" th:text="${movie.title}">Movie Title</h5>
+              <p class="card-text text-muted">
+                <span th:text="${movie.genre}">Genre</span> |
+                <span th:text="${#temporals.format(movie.releaseDate, 'MMM dd, yyyy')}">Release Date</span>
+              </p>
+              <p class="card-text" th:text="${#strings.abbreviate(movie.description, 100)}">Description</p>
+            </div>
+            <div class="card-footer bg-white border-top-0">
+              <a th:href="@{/movies/{id}(id=${movie.id})}" class="btn btn-outline-primary w-100">View Details</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="text-center" th:if="${upcoming.empty}">
+        <p class="lead">No upcoming movies scheduled.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="py-5">
+    <div class="container">
+      <h2 class="text-center mb-5">Why Choose Us</h2>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+              <i class="fas fa-ticket-alt fa-3x text-primary mb-3"></i>
+              <h5 class="card-title">Easy Booking</h5>
+              <p class="card-text">Book your tickets in just a few clicks and secure the best seats.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+              <i class="fas fa-film fa-3x text-primary mb-3"></i>
+              <h5 class="card-title">Latest Movies</h5>
+              <p class="card-text">Enjoy the latest blockbusters as soon as they're released.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center">
+              <i class="fas fa-couch fa-3x text-primary mb-3"></i>
+              <h5 class="card-title">Premium Experience</h5>
+              <p class="card-text">Comfortable seating and state-of-the-art sound systems.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+</body>
+</html>

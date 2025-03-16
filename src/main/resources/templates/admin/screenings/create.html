@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Add New Screening')">
+  <title>Add New Screening - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2><i class="fas fa-calendar-plus me-2"></i>Add New Screening</h2>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Admin Dashboard</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/screenings}">Screenings</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Add New Screening</li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <span th:text="${errorMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Screening Form -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Screening Information</h5>
+      </div>
+      <div class="card-body">
+        <form th:action="@{/admin/screenings/create}" th:object="${screening}" method="post" class="row g-3">
+          <div class="col-md-6">
+            <label for="movieId" class="form-label">Movie</label>
+            <select class="form-select" id="movieId" th:field="*{movieId}" required
+                    th:classappend="${#fields.hasErrors('movieId')} ? 'is-invalid' : ''">
+              <option value="">Select Movie</option>
+              <option th:each="movie : ${movies}"
+                      th:value="${movie.id}"
+                      th:text="${movie.title + ' (' + #temporals.format(movie.releaseDate, 'yyyy') + ')'}">
+                Movie Title (Year)
+              </option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('movieId')}" th:errors="*{movieId}"></div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="theatreId" class="form-label">Theatre</label>
+            <select class="form-select" id="theatreId" th:field="*{theatreId}" required
+                    th:classappend="${#fields.hasErrors('theatreId')} ? 'is-invalid' : ''">
+              <option value="">Select Theatre</option>
+              <option th:each="theatre : ${theatres}"
+                      th:value="${theatre.id}"
+                      th:text="${theatre.name}">Theatre Name</option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('theatreId')}" th:errors="*{theatreId}"></div>
+          </div>
+
+          <div class="col-md-4">
+            <label for="screenNumber" class="form-label">Screen Number</label>
+            <select class="form-select" id="screenNumber" th:field="*{screenNumber}" required
+                    th:classappend="${#fields.hasErrors('screenNumber')} ? 'is-invalid' : ''">
+              <option value="">Select Screen</option>
+              <option th:each="screen : ${#numbers.sequence(1, 10)}"
+                      th:value="${screen}"
+                      th:text="${'Screen ' + screen}">Screen #</option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('screenNumber')}" th:errors="*{screenNumber}"></div>
+          </div>
+
+          <div class="col-md-4">
+            <label for="format" class="form-label">Format</label>
+            <select class="form-select" id="format" th:field="*{format}" required
+                    th:classappend="${#fields.hasErrors('format')} ? 'is-invalid' : ''">
+              <option value="">Select Format</option>
+              <option th:each="formatOption : ${formats}"
+                      th:value="${formatOption}"
+                      th:text="${formatOption}">Format</option>
+            </select>
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('format')}" th:errors="*{format}"></div>
+          </div>
+
+          <div class="col-md-4">
+            <label for="basePrice" class="form-label">Base Price ($)</label>
+            <input type="number" class="form-control" id="basePrice" th:field="*{basePrice}" step="0.01" required
+                   th:classappend="${#fields.hasErrors('basePrice')} ? 'is-invalid' : ''">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('basePrice')}" th:errors="*{basePrice}"></div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="startDate" class="form-label">Date</label>
+            <input type="date" class="form-control" id="startDate" name="startDate" required>
+          </div>
+
+          <div class="col-md-6">
+            <label for="startTime" class="form-label">Time</label>
+            <input type="time" class="form-control" id="startTime" name="startTime" required>
+          </div>
+
+          <div class="col-12">
+            <div class="alert alert-info" role="alert">
+              <i class="fas fa-info-circle me-2"></i> The system will automatically calculate the end time based on the movie's duration.
+            </div>
+          </div>
+
+          <div class="col-12 mt-4">
+            <button type="submit" class="btn btn-primary">Create Screening</button>
+            <a th:href="@{/admin/screenings}" class="btn btn-secondary ms-2">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+
+<!-- Custom JavaScript for Date/Time to DateTime conversion -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      // Get the date and time inputs
+      const startDate = document.getElementById('startDate').value;
+      const startTime = document.getElementById('startTime').value;
+
+      // Create a hidden input for the combined datetime
+      const hiddenInput = document.createElement('input');
+      hiddenInput.type = 'hidden';
+      hiddenInput.name = 'startTime';
+      hiddenInput.value = startDate + 'T' + startTime + ':00';
+
+      // Add it to the form
+      form.appendChild(hiddenInput);
+
+      // Submit the form
+      form.submit();
+    });
+  });
+</script>
+</body>
+</html>

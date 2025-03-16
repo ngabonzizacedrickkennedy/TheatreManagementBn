@@ -1,0 +1,20 @@
+<!-- src/main/resources/templates/error/error.html (Default error page) -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Error</title>
+    <link rel="stylesheet" th:href="@{/css/error.css}">
+</head>
+<body>
+<div class="error-container">
+    <h1>Oops! Something went wrong</h1>
+    <div class="error-details">
+        <p th:text="${errorMessage}">Error message</p>
+        <p th:if="${statusCode}" th:text="'Status code: ' + ${statusCode}">Status code</p>
+        <p th:if="${exceptionMessage}" th:text="'Exception: ' + ${exceptionMessage}">Exception message</p>
+    </div>
+    <a href="/" class="btn">Go to Homepage</a>
+</div>
+</body>
+</html>

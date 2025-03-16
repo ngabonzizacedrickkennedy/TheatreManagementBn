@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Edit User')">
+  <title>Edit User - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2><i class="fas fa-user-edit me-2"></i>Edit User</h2>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Admin Dashboard</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/users}">Users</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Edit User</li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <span th:text="${errorMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- User Edit Form -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Edit User Information</h5>
+      </div>
+      <div class="card-body">
+        <form th:action="@{/admin/users/{id}/edit(id=${user.id})}" th:object="${user}" method="post" class="row g-3">
+          <div class="col-md-6">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" th:field="*{username}" readonly>
+            <div class="form-text">Username cannot be changed.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" th:field="*{email}"
+                   th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="firstName" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="firstName" th:field="*{firstName}"
+                   th:classappend="${#fields.hasErrors('firstName')} ? 'is-invalid' : ''">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('firstName')}" th:errors="*{firstName}"></div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="lastName" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="lastName" th:field="*{lastName}"
+                   th:classappend="${#fields.hasErrors('lastName')} ? 'is-invalid' : ''">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('lastName')}" th:errors="*{lastName}"></div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="phoneNumber" class="form-label">Phone Number</label>
+            <input type="tel" class="form-control" id="phoneNumber" th:field="*{phoneNumber}"
+                   th:classappend="${#fields.hasErrors('phoneNumber')} ? 'is-invalid' : ''">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('phoneNumber')}" th:errors="*{phoneNumber}"></div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="role" class="form-label">Role</label>
+            <select class="form-select" id="role" name="role">
+              <option value="ROLE_USER" th:selected="${user.role.name() == 'ROLE_USER'}">User</option>
+              <option value="ROLE_MANAGER" th:selected="${user.role.name() == 'ROLE_MANAGER'}">Manager</option>
+              <option value="ROLE_ADMIN" th:selected="${user.role.name() == 'ROLE_ADMIN'}">Admin</option>
+            </select>
+          </div>
+
+          <div class="col-12">
+            <hr>
+            <h6>Change Password (leave blank to keep current password)</h6>
+          </div>
+
+          <div class="col-md-6">
+            <label for="password" class="form-label">New Password</label>
+            <input type="password" class="form-control" id="password" th:field="*{password}"
+                   th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></div>
+            <div class="form-text">Password must be at least 6 characters long.</div>
+          </div>
+
+          <div class="col-md-6">
+            <label for="confirmPassword" class="form-label">Confirm New Password</label>
+            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword">
+          </div>
+
+          <div class="col-12 mt-4">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a th:href="@{/admin/users}" class="btn btn-secondary ms-2">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+</body>
+</html>

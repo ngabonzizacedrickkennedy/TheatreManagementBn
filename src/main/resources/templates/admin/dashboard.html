@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Admin Dashboard')">
+  <title>Admin Dashboard - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2><i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard</h2>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Admin Dashboard</li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+      <div class="col-md-3 mb-4">
+        <div class="card dashboard-card users h-100">
+          <div class="card-body">
+            <i class="fas fa-users"></i>
+            <h3 th:text="${totalUsers}">0</h3>
+            <p class="mb-0">Total Users</p>
+          </div>
+          <div class="card-footer bg-transparent border-0">
+            <a th:href="@{/admin/users}" class="text-white text-decoration-none">
+              View Details <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 mb-4">
+        <div class="card dashboard-card movies h-100">
+          <div class="card-body">
+            <i class="fas fa-film"></i>
+            <h3 th:text="${totalMovies}">0</h3>
+            <p class="mb-0">Total Movies</p>
+          </div>
+          <div class="card-footer bg-transparent border-0">
+            <a th:href="@{/admin/movies}" class="text-white text-decoration-none">
+              View Details <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 mb-4">
+        <div class="card dashboard-card theatres h-100">
+          <div class="card-body">
+            <i class="fas fa-building"></i>
+            <h3 th:text="${totalTheatres}">0</h3>
+            <p class="mb-0">Total Theatres</p>
+          </div>
+          <div class="card-footer bg-transparent border-0">
+            <a th:href="@{/admin/theatres}" class="text-white text-decoration-none">
+              View Details <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3 mb-4">
+        <div class="card dashboard-card bookings h-100">
+          <div class="card-body">
+            <i class="fas fa-ticket-alt"></i>
+            <h3 th:text="${totalBookings}">0</h3>
+            <p class="mb-0">Total Bookings</p>
+          </div>
+          <div class="card-footer bg-transparent border-0">
+            <a th:href="@{/admin/bookings}" class="text-white text-decoration-none">
+              View Details <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-5">
+      <div class="col-12">
+        <div class="card shadow-sm">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">Quick Actions</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3 mb-3">
+                <a th:href="@{/admin/movies/create}" class="btn btn-outline-primary w-100">
+                  <i class="fas fa-plus-circle me-2"></i>Add New Movie
+                </a>
+              </div>
+              <div class="col-md-3 mb-3">
+                <a th:href="@{/admin/theatres/create}" class="btn btn-outline-primary w-100">
+                  <i class="fas fa-plus-circle me-2"></i>Add New Theatre
+                </a>
+              </div>
+              <div class="col-md-3 mb-3">
+                <a th:href="@{/admin/screenings/create}" class="btn btn-outline-primary w-100">
+                  <i class="fas fa-plus-circle me-2"></i>Add New Screening
+                </a>
+              </div>
+              <div class="col-md-3 mb-3">
+                <a th:href="@{/admin/reports}" class="btn btn-outline-primary w-100">
+                  <i class="fas fa-chart-bar me-2"></i>View Reports
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+      <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Recent Bookings</h5>
+            <a th:href="@{/admin/bookings}" class="btn btn-sm btn-outline-primary">View All</a>
+          </div>
+          <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+              <!-- Sample recent bookings - replace with actual data -->
+              <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">Booking #BK12345</h6>
+                  <small class="text-muted">3 mins ago</small>
+                </div>
+                <p class="mb-1">User: John Doe</p>
+                <small class="text-muted">Movie: Inception, Seats: A1, A2</small>
+              </div>
+              <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">Booking #BK12344</h6>
+                  <small class="text-muted">24 mins ago</small>
+                </div>
+                <p class="mb-1">User: Jane Smith</p>
+                <small class="text-muted">Movie: The Matrix, Seats: C4, C5</small>
+              </div>
+              <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">Booking #BK12343</h6>
+                  <small class="text-muted">1 hour ago</small>
+                </div>
+                <p class="mb-1">User: Mike Johnson</p>
+                <small class="text-muted">Movie: Avengers, Seats: B7, B8, B9</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6 mb-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">New Users</h5>
+            <a th:href="@{/admin/users}" class="btn btn-sm btn-outline-primary">View All</a>
+          </div>
+          <div class="card-body p-0">
+            <div class="list-group list-group-flush">
+              <!-- Sample new users - replace with actual data -->
+              <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">Alice Brown</h6>
+                  <small class="text-muted">1 hour ago</small>
+                </div>
+                <p class="mb-1">alice.brown@example.com</p>
+                <small class="text-muted">Role: User</small>
+              </div>
+              <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">Robert Davis</h6>
+                  <small class="text-muted">3 hours ago</small>
+                </div>
+                <p class="mb-1">robert.davis@example.com</p>
+                <small class="text-muted">Role: User</small>
+              </div>
+              <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">Emily Wilson</h6>
+                  <small class="text-muted">5 hours ago</small>
+                </div>
+                <p class="mb-1">emily.wilson@example.com</p>
+                <small class="text-muted">Role: User</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+</body>
+</html>

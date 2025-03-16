@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Manage Screenings')">
+  <title>Manage Screenings - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2><i class="fas fa-calendar-alt me-2"></i>Manage Screenings</h2>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Admin Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Screenings</li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+      <span th:text="${successMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <span th:text="${errorMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <form th:action="@{/admin/screenings}" method="get" class="row g-3">
+          <div class="col-md-3">
+            <label for="movie" class="form-label">Movie</label>
+            <select class="form-select" id="movie" name="movieId">
+              <option value="">All Movies</option>
+              <option th:each="movie : ${movies}"
+                      th:value="${movie.id}"
+                      th:text="${movie.title}">Movie Title</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="theatre" class="form-label">Theatre</label>
+            <select class="form-select" id="theatre" name="theatreId">
+              <option value="">All Theatres</option>
+              <option th:each="theatre : ${theatres}"
+                      th:value="${theatre.id}"
+                      th:text="${theatre.name}">Theatre Name</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label for="date" class="form-label">Date</label>
+            <input type="date" class="form-control" id="date" name="date">
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Filter</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Screenings Table -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Screenings</h5>
+        <div>
+          <a th:href="@{/admin/screenings/create}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus-circle me-1"></i>Add New Screening
+          </a>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Movie</th>
+              <th scope="col">Theatre</th>
+              <th scope="col">Screen</th>
+              <th scope="col">Start Time</th>
+              <th scope="col">End Time</th>
+              <th scope="col">Format</th>
+              <th scope="col">Price</th>
+              <th scope="col">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${screenings.empty}">
+              <td colspan="9" class="text-center">No screenings found</td>
+            </tr>
+            <tr th:each="screening : ${screenings}">
+              <td th:text="${screening.id}">1</td>
+              <td th:text="${screening.movieTitle}">Movie Title</td>
+              <td th:text="${screening.theatreName}">Theatre Name</td>
+              <td th:text="${screening.screenNumber}">1</td>
+              <td th:text="${#temporals.format(screening.startTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 19:30</td>
+              <td th:text="${#temporals.format(screening.endTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 21:30</td>
+              <td>
+                <span class="badge bg-primary" th:text="${screening.format}">STANDARD</span>
+              </td>
+              <td th:text="${'$' + #numbers.formatDecimal(screening.basePrice, 1, 2)}">$10.00</td>
+              <td>
+                <div class="btn-group" role="group">
+                  <a th:href="@{/screenings/{id}(id=${screening.id})}" class="btn btn-sm btn-outline-secondary" title="View">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <a th:href="@{/admin/screenings/{id}/edit(id=${screening.id})}" class="btn btn-sm btn-outline-primary" title="Edit">
+                    <i class="fas fa-edit"></i>
+                  </a>
+                  <a th:href="@{/admin/screenings/{id}/bookings(id=${screening.id})}" class="btn btn-sm btn-outline-info" title="View Bookings">
+                    <i class="fas fa-ticket-alt"></i>
+                  </a>
+                  <button type="button" class="btn btn-sm btn-outline-danger" title="Delete"
+                          data-bs-toggle="modal" th:data-bs-target="'#deleteModal' + ${screening.id}">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div class="modal fade" th:id="'deleteModal' + ${screening.id}" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        Are you sure you want to delete the screening of
+                        <strong th:text="${screening.movieTitle}">Movie Title</strong> at
+                        <strong th:text="${screening.theatreName}">Theatre Name</strong> on
+                        <strong th:text="${#temporals.format(screening.startTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 19:30</strong>?
+
+                        <p class="text-danger mt-2">This will also delete all related bookings. This action cannot be undone.</p>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form th:action="@{/admin/screenings/{id}/delete(id=${screening.id})}" method="post">
+                          <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer bg-white">
+        <nav aria-label="Page navigation">
+          <ul class="pagination justify-content-center mb-0">
+            <li class="page-item disabled">
+              <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+              <a class="page-link" href="#">Next</a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+</body>
+</html>
