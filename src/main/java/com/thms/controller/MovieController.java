@@ -102,7 +102,11 @@ public class MovieController {
         } else {
             return "movies/list";
         }
+
     }
+
+
+
 
     @GetMapping("/{id}")
     public String getMovieDetails(@PathVariable("id") Long id, Model model) {

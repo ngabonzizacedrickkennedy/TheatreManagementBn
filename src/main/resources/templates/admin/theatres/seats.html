@@ -52,7 +52,7 @@
     <ul class="nav nav-tabs mb-4" id="screenTabs" role="tablist">
       <li class="nav-item" role="presentation" th:each="i : ${#numbers.sequence(1, theatre.totalScreens)}">
         <button class="nav-link" th:class="${i == 1} ? 'nav-link active' : 'nav-link'"
-                th:id="screen-tab-${i}" data-bs-toggle="tab"
+                th:id="'screen-tab-' + ${i}" data-bs-toggle="tab"
                 th:data-bs-target="'#screen-' + ${i}" type="button" role="tab"
                 th:aria-controls="'screen-' + ${i}" th:aria-selected="${i == 1}">
           Screen <span th:text="${i}">1</span>
@@ -89,15 +89,12 @@
               <div class="seat-container">
                 <div class="screen mb-4">SCREEN</div>
 
-                <!-- Group seats by row -->
-                <div th:each="row : ${#vars['seatsScreen' + i].stream().map(seat -> seat.rowName).distinct().sorted().toList()}" class="seat-row mb-2">
-                  <div class="row-name" th:text="${row}">A</div>
-
-                  <!-- Seats in this row -->
-                  <div th:each="seat : ${#vars['seatsScreen' + i].stream().filter(s -> s.rowName == row).sorted((s1, s2) -> s1.seatNumber.compareTo(s2.seatNumber)).toList()}"
-                       class="seat" th:classappend="${seat.seatType.name()}">
-                    <span th:text="${seat.seatNumber}">1</span>
-                  </div>
+                <!-- Simply display all seats directly -->
+                <div th:each="seat : ${#vars['seatsScreen' + i]}"
+                     class="seat-item"
+                     th:class="'seat-item ' + ${seat.seatType.toString().toLowerCase()}"
+                     th:text="${seat.rowName + seat.seatNumber}">
+                  A1
                 </div>
 
                 <!-- Seat type legend -->
@@ -170,5 +167,73 @@
 </main>
 
 <div th:replace="fragments/footer :: footer"></div>
+
+<style>
+  .seat-container {
+    margin: 20px 0;
+    text-align: center;
+  }
+
+  .screen {
+    background-color: #d1d1d1;
+    color: #333;
+    padding: 5px 20px;
+    width: 80%;
+    text-align: center;
+    border-radius: 5px;
+    margin: 0 auto 25px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  }
+
+  .seat-item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    margin: 4px;
+    border-radius: 8px 8px 0 0;
+    background-color: #ced4da;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.3s ease;
+  }
+
+  .seat-item.standard {
+    background-color: #6c757d;
+  }
+
+  .seat-item.premium {
+    background-color: #fd7e14;
+  }
+
+  .seat-item.vip {
+    background-color: #6f42c1;
+  }
+
+  .seat-item.accessible {
+    background-color: #20c997;
+  }
+
+  .seat-legend {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .legend-seat {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px 4px 0 0;
+  }
+</style>
 </body>
 </html>

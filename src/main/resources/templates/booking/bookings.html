@@ -1,10 +1,215 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('My Bookings')">
+    <title>My Bookings - Theatre Management System</title>
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
 
+<main class="flex-grow-1 py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-ticket-alt me-2"></i>My Bookings</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">My Bookings</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Booking Tabs -->
+        <ul class="nav nav-tabs mb-4" id="bookingTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab" aria-controls="upcoming" aria-selected="true">
+                    Upcoming
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="past-tab" data-bs-toggle="tab" data-bs-target="#past" type="button" role="tab" aria-controls="past" aria-selected="false">
+                    Past
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" type="button" role="tab" aria-controls="cancelled" aria-selected="false">
+                    Cancelled
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="bookingTabsContent">
+            <!-- Upcoming Bookings -->
+            <div class="tab-pane fade show active" id="upcoming" role="tabpanel" aria-labelledby="upcoming-tab">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Booking #</th>
+                                    <th>Movie</th>
+                                    <th>Theatre</th>
+                                    <th>Date & Time</th>
+                                    <th>Seats</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <!-- No upcoming bookings message -->
+                                <tr th:if="${#lists.isEmpty(bookings) || #lists.isEmpty(bookings.?[screeningTime.isAfter(T(java.time.LocalDateTime).now()) && paymentStatus.name() != 'CANCELLED' && paymentStatus.name() != 'REFUNDED'])}">
+                                    <td colspan="8" class="text-center py-4">
+                                        <p class="mb-0">You don't have any upcoming bookings.</p>
+                                        <a th:href="@{/movies}" class="btn btn-primary btn-sm mt-2">
+                                            <i class="fas fa-film me-1"></i>Browse Movies
+                                        </a>
+                                    </td>
+                                </tr>
+
+                                <!-- Upcoming bookings list -->
+                                <tr th:each="booking : ${bookings.?[screeningTime.isAfter(T(java.time.LocalDateTime).now()) && paymentStatus.name() != 'CANCELLED' && paymentStatus.name() != 'REFUNDED']}">
+                                    <td th:text="${booking.bookingNumber}">BK12345</td>
+                                    <td th:text="${booking.movieTitle}">Movie Title</td>
+                                    <td th:text="${booking.theatreName}">Theatre Name</td>
+                                    <td th:text="${#temporals.format(booking.screeningTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 19:30</td>
+                                    <td>
+                                        <span th:each="seat, seatStat : ${booking.bookedSeats}" class="badge bg-primary me-1" th:text="${seat}">A1</span>
+                                    </td>
+                                    <td th:text="${'$' + #numbers.formatDecimal(booking.totalAmount, 1, 2)}">$10.00</td>
+                                    <td><span class="badge bg-success">Confirmed</span></td>
+                                    <td>
+                                        <a th:href="@{/bookings/{id}(id=${booking.id})}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Past Bookings -->
+            <div class="tab-pane fade" id="past" role="tabpanel" aria-labelledby="past-tab">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Booking #</th>
+                                    <th>Movie</th>
+                                    <th>Theatre</th>
+                                    <th>Date & Time</th>
+                                    <th>Seats</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <!-- No past bookings message -->
+                                <tr th:if="${#lists.isEmpty(bookings) || #lists.isEmpty(bookings.?[screeningTime.isBefore(T(java.time.LocalDateTime).now()) && paymentStatus.name() != 'CANCELLED' && paymentStatus.name() != 'REFUNDED'])}">
+                                    <td colspan="8" class="text-center py-4">
+                                        <p class="mb-0">You don't have any past bookings.</p>
+                                    </td>
+                                </tr>
+
+                                <!-- Past bookings list -->
+                                <tr th:each="booking : ${bookings.?[screeningTime.isBefore(T(java.time.LocalDateTime).now()) && paymentStatus.name() != 'CANCELLED' && paymentStatus.name() != 'REFUNDED']}">
+                                    <td th:text="${booking.bookingNumber}">BK12345</td>
+                                    <td th:text="${booking.movieTitle}">Movie Title</td>
+                                    <td th:text="${booking.theatreName}">Theatre Name</td>
+                                    <td th:text="${#temporals.format(booking.screeningTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 19:30</td>
+                                    <td>
+                                        <span th:each="seat, seatStat : ${booking.bookedSeats}" class="badge bg-secondary me-1" th:text="${seat}">A1</span>
+                                    </td>
+                                    <td th:text="${'$' + #numbers.formatDecimal(booking.totalAmount, 1, 2)}">$10.00</td>
+                                    <td><span class="badge bg-secondary">Completed</span></td>
+                                    <td>
+                                        <a th:href="@{/bookings/{id}(id=${booking.id})}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cancelled Bookings -->
+            <div class="tab-pane fade" id="cancelled" role="tabpanel" aria-labelledby="cancelled-tab">
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Booking #</th>
+                                    <th>Movie</th>
+                                    <th>Theatre</th>
+                                    <th>Date & Time</th>
+                                    <th>Seats</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <!-- No cancelled bookings message -->
+                                <tr th:if="${#lists.isEmpty(bookings) || #lists.isEmpty(bookings.?[paymentStatus.name() == 'CANCELLED' || paymentStatus.name() == 'REFUNDED'])}">
+                                    <td colspan="8" class="text-center py-4">
+                                        <p class="mb-0">You don't have any cancelled bookings.</p>
+                                    </td>
+                                </tr>
+
+                                <!-- Cancelled bookings list -->
+                                <tr th:each="booking : ${bookings.?[paymentStatus.name() == 'CANCELLED' || paymentStatus.name() == 'REFUNDED']}">
+                                    <td th:text="${booking.bookingNumber}">BK12345</td>
+                                    <td th:text="${booking.movieTitle}">Movie Title</td>
+                                    <td th:text="${booking.theatreName}">Theatre Name</td>
+                                    <td th:text="${#temporals.format(booking.screeningTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 19:30</td>
+                                    <td>
+                                        <span th:each="seat, seatStat : ${booking.bookedSeats}" class="badge bg-light text-dark me-1" th:text="${seat}">A1</span>
+                                    </td>
+                                    <td th:text="${'$' + #numbers.formatDecimal(booking.totalAmount, 1, 2)}">$10.00</td>
+                                    <td>
+                                        <span th:if="${booking.paymentStatus.name() == 'CANCELLED'}" class="badge bg-danger">Cancelled</span>
+                                        <span th:if="${booking.paymentStatus.name() == 'REFUNDED'}" class="badge bg-info">Refunded</span>
+                                    </td>
+                                    <td>
+                                        <a th:href="@{/bookings/{id}(id=${booking.id})}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
 </body>
 </html>

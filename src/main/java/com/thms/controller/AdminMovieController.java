@@ -3,6 +3,8 @@ package com.thms.controller;
 import com.thms.dto.MovieDTO;
 import com.thms.model.Movie;
 import com.thms.service.MovieService;
+import com.thms.service.ScreeningService;
+import com.thms.service.TheatreService;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -19,9 +21,15 @@ import java.util.Arrays;
 public class AdminMovieController {
 
     private final MovieService movieService;
+    private final ScreeningService screeningService;
+    private final TheatreService theatreService;
 
-    public AdminMovieController(MovieService movieService) {
+    public AdminMovieController(MovieService movieService,
+                                ScreeningService screeningService,
+                                TheatreService theatreService) {
         this.movieService = movieService;
+        this.screeningService = screeningService;
+        this.theatreService = theatreService;
     }
 
     @GetMapping
@@ -132,16 +140,18 @@ public class AdminMovieController {
         }
         return "redirect:/admin/movies";
     }
-    
+
     @GetMapping("/{id}/screenings")
     public String viewMovieScreenings(@PathVariable("id") Long id, Model model) {
         MovieDTO movie = movieService.getMovieById(id)
                 .orElseThrow(() -> new RuntimeException("Movie not found with id: " + id));
-        
+
         model.addAttribute("movie", movie);
-        // You'll need to implement this method in your service
-        // model.addAttribute("screenings", screeningService.getScreeningsByMovie(id));
-        
+        // Add the screenings
+        model.addAttribute("screenings", screeningService.getScreeningsByMovie(id));
+        // Add empty list if no theatres are available
+        model.addAttribute("theatres", theatreService.getTheatresByMovie(id));
+
         return "admin/movies/theatre";
     }
 }

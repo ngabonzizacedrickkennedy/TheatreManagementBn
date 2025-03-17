@@ -107,33 +107,118 @@
                  role="tabpanel"
                  th:aria-labelledby="'day-' + ${iterStat.index} + '-tab'">
 
-              <div class="mb-4" th:each="theatreScreenings : ${entry.value.stream().collect(T(java.util.stream.Collectors).groupingBy(s -> s.theatreId))}">
-                <!-- Get theatre name from first screening in the group -->
-                <h4 class="mb-3" th:text="${theatreScreenings.value[0].theatreName}">Theatre Name</h4>
+              <!-- Group screenings by theatre (without using streams) -->
+              <div th:if="${entry.value != null && !entry.value.empty}">
 
-                <div class="screening-formats mb-4">
-                  <!-- Group by format -->
-                  <div class="mb-3" th:each="formatScreenings : ${theatreScreenings.value.stream().collect(T(java.util.stream.Collectors).groupingBy(s -> s.format))}">
-                    <h5 class="screening-format mb-2">
-                      <span class="badge" th:classappend="${formatScreenings.key.name() == 'STANDARD' ? 'bg-secondary' :
-                                                          (formatScreenings.key.name() == 'IMAX' ? 'bg-primary' :
-                                                          (formatScreenings.key.name() == 'THREE_D' ? 'bg-info' :
-                                                          (formatScreenings.key.name() == 'FOUR_D' ? 'bg-warning' :
-                                                          'bg-success')))}">
-                        <span th:text="${formatScreenings.key}">Format</span>
-                      </span>
-                    </h5>
+                <!-- Process each theatre separately -->
+                <div th:each="theatre : ${theatres}" class="mb-4">
+                  <h4 class="mb-3" th:text="${theatre.name}">Theatre Name</h4>
 
-                    <div class="screening-times">
-                      <div class="d-flex flex-wrap gap-2">
-                        <a th:each="screening : ${formatScreenings.value}"
-                           th:href="@{/bookings/screening/{id}(id=${screening.id})}"
-                           class="screening-time-badge">
-                          <span class="badge bg-light text-dark border p-2 screening-time"
-                                th:text="${#temporals.format(screening.startTime, 'HH:mm')}">
-                            19:30
-                          </span>
-                        </a>
+                  <!-- Filter screenings for this theatre and date -->
+                  <div th:with="theatreScreenings=${entry.value.?[theatreId == theatre.id]}"
+                       th:if="${!#lists.isEmpty(theatreScreenings)}">
+
+                    <!-- Group by format (without streams) -->
+                    <div class="screening-formats mb-4">
+
+                      <!-- Standard format -->
+                      <div th:with="formatScreenings=${theatreScreenings.?[format.name() == 'STANDARD']}"
+                           th:if="${!#lists.isEmpty(formatScreenings)}" class="mb-3">
+                        <h5 class="screening-format mb-2">
+                          <span class="badge bg-secondary">STANDARD</span>
+                        </h5>
+                        <div class="screening-times">
+                          <div class="d-flex flex-wrap gap-2">
+                            <a th:each="screening : ${formatScreenings}"
+                               th:href="@{/bookings/screening/{id}(id=${screening.id})}"
+                               class="screening-time-badge">
+                              <span class="badge bg-light text-dark border p-2 screening-time"
+                                    th:text="${#temporals.format(screening.startTime, 'HH:mm')}">
+                                19:30
+                              </span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- IMAX format -->
+                      <div th:with="formatScreenings=${theatreScreenings.?[format.name() == 'IMAX']}"
+                           th:if="${!#lists.isEmpty(formatScreenings)}" class="mb-3">
+                        <h5 class="screening-format mb-2">
+                          <span class="badge bg-primary">IMAX</span>
+                        </h5>
+                        <div class="screening-times">
+                          <div class="d-flex flex-wrap gap-2">
+                            <a th:each="screening : ${formatScreenings}"
+                               th:href="@{/bookings/screening/{id}(id=${screening.id})}"
+                               class="screening-time-badge">
+                              <span class="badge bg-light text-dark border p-2 screening-time"
+                                    th:text="${#temporals.format(screening.startTime, 'HH:mm')}">
+                                19:30
+                              </span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 3D format -->
+                      <div th:with="formatScreenings=${theatreScreenings.?[format.name() == 'THREE_D']}"
+                           th:if="${!#lists.isEmpty(formatScreenings)}" class="mb-3">
+                        <h5 class="screening-format mb-2">
+                          <span class="badge bg-info">3D</span>
+                        </h5>
+                        <div class="screening-times">
+                          <div class="d-flex flex-wrap gap-2">
+                            <a th:each="screening : ${formatScreenings}"
+                               th:href="@{/bookings/screening/{id}(id=${screening.id})}"
+                               class="screening-time-badge">
+                              <span class="badge bg-light text-dark border p-2 screening-time"
+                                    th:text="${#temporals.format(screening.startTime, 'HH:mm')}">
+                                19:30
+                              </span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- 4D format -->
+                      <div th:with="formatScreenings=${theatreScreenings.?[format.name() == 'FOUR_D']}"
+                           th:if="${!#lists.isEmpty(formatScreenings)}" class="mb-3">
+                        <h5 class="screening-format mb-2">
+                          <span class="badge bg-warning">4D</span>
+                        </h5>
+                        <div class="screening-times">
+                          <div class="d-flex flex-wrap gap-2">
+                            <a th:each="screening : ${formatScreenings}"
+                               th:href="@{/bookings/screening/{id}(id=${screening.id})}"
+                               class="screening-time-badge">
+                              <span class="badge bg-light text-dark border p-2 screening-time"
+                                    th:text="${#temporals.format(screening.startTime, 'HH:mm')}">
+                                19:30
+                              </span>
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Dolby Atmos format -->
+                      <div th:with="formatScreenings=${theatreScreenings.?[format.name() == 'DOLBY_ATMOS']}"
+                           th:if="${!#lists.isEmpty(formatScreenings)}" class="mb-3">
+                        <h5 class="screening-format mb-2">
+                          <span class="badge bg-success">Dolby Atmos</span>
+                        </h5>
+                        <div class="screening-times">
+                          <div class="d-flex flex-wrap gap-2">
+                            <a th:each="screening : ${formatScreenings}"
+                               th:href="@{/bookings/screening/{id}(id=${screening.id})}"
+                               class="screening-time-badge">
+                              <span class="badge bg-light text-dark border p-2 screening-time"
+                                    th:text="${#temporals.format(screening.startTime, 'HH:mm')}">
+                                19:30
+                              </span>
+                            </a>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

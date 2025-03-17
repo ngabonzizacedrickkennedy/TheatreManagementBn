@@ -80,7 +80,8 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:if="${theatres.empty}">
+            <!-- Replace the problematic line -->
+            <tr th:if="${theatres == null || theatres.empty}">
               <td colspan="7" class="text-center">No theatres found</td>
             </tr>
             <tr th:each="theatre : ${theatres}">
