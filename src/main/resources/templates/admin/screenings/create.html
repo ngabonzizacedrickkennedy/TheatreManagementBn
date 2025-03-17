@@ -93,13 +93,17 @@
           </div>
 
           <div class="col-md-6">
-            <label for="startDate" class="form-label">Date</label>
-            <input type="date" class="form-control" id="startDate" name="startDate" required>
+            <label for="startDateString" class="form-label">Date</label>
+            <input type="date" class="form-control" id="startDateString" name="startDateString" required
+                   th:classappend="${#fields.hasErrors('startDateString')} ? 'is-invalid' : ''">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('startDateString')}" th:errors="*{startDateString}"></div>
           </div>
 
           <div class="col-md-6">
-            <label for="startTime" class="form-label">Time</label>
-            <input type="time" class="form-control" id="startTime" name="startTime" required>
+            <label for="startTimeString" class="form-label">Time</label>
+            <input type="time" class="form-control" id="startTimeString" name="startTimeString" required
+                   th:classappend="${#fields.hasErrors('startTimeString')} ? 'is-invalid' : ''">
+            <div class="invalid-feedback" th:if="${#fields.hasErrors('startTimeString')}" th:errors="*{startTimeString}"></div>
           </div>
 
           <div class="col-12">
@@ -121,29 +125,5 @@
 <div th:replace="fragments/footer :: footer"></div>
 
 <!-- Custom JavaScript for Date/Time to DateTime conversion -->
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-
-      // Get the date and time inputs
-      const startDate = document.getElementById('startDate').value;
-      const startTime = document.getElementById('startTime').value;
-
-      // Create a hidden input for the combined datetime
-      const hiddenInput = document.createElement('input');
-      hiddenInput.type = 'hidden';
-      hiddenInput.name = 'startTime';
-      hiddenInput.value = startDate + 'T' + startTime + ':00';
-
-      // Add it to the form
-      form.appendChild(hiddenInput);
-
-      // Submit the form
-      form.submit();
-    });
-  });
-</script>
 </body>
 </html>

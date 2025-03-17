@@ -155,4 +155,10 @@ public class ScreeningService {
         dto.setBasePrice(screening.getBasePrice());
         return dto;
     }
+    @Transactional(readOnly = true)
+    public List<ScreeningDTO> getUpcomingScreenings(LocalDateTime fromDateTime) {
+        return screeningRepository.findByStartTimeAfterOrderByStartTimeAsc(fromDateTime).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 }

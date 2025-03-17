@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -130,5 +131,15 @@ public class MovieService {
         movie.setTrailerUrl(dto.getTrailerUrl());
         movie.setRating(dto.getRating());
         return movie;
+    }
+    @Transactional(readOnly = true)
+    public List<MovieDTO> getMoviesByIds(Collection<Long> movieIds) {
+        if (movieIds == null || movieIds.isEmpty()) {
+            return List.of();
+        }
+
+        return movieRepository.findAllById(movieIds).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }

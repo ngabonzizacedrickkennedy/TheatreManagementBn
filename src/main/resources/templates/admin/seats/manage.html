@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Manage Seats')">
+  <title>Manage Seats - Theatre Management System</title>
+  <style>
+    .seat-grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+    .screen {
+      background-color: #d1d1d1;
+      color: #333;
+      padding: 5px 20px;
+      width: 80%;
+      text-align: center;
+      border-radius: 5px;
+      margin-bottom: 25px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+    .seat-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .row-name {
+      width: 30px;
+      margin-right: 10px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .admin-seat {
+      width: 40px;
+      height: 40px;
+      margin: 0 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px 8px 0 0;
+      color: white;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: transform 0.3s;
+    }
+    .admin-seat:hover {
+      transform: scale(1.1);
+    }
+    .admin-seat.standard {
+      background-color: #6c757d;
+    }
+    .admin-seat.premium {
+      background-color: #fd7e14;
+    }
+    .admin-seat.vip {
+      background-color: #6f42c1;
+    }
+    .admin-seat.accessible {
+      background-color: #20c997;
+    }
+    .admin-seat.selected {
+      border: 3px solid #0d6efd;
+    }
+    .seat-actions {
+      position: sticky;
+      bottom: 0;
+      background-color: white;
+      padding: 15px;
+      border-top: 1px solid #dee2e6;
+      margin-top: 20px;
+      box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2><i class="fas fa-chair me-2"></i>Manage Seats for <span th:text="${theatre.name + ' - Screen ' + screenNumber}">Theatre Name - Screen 1</span></h2>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Admin Dashboard</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/theatres}">Theatres</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/seats/theatre/{id}(id=${theatre.id})}">Screens</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Manage Seats</li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+      <span th:text="${successMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <span th:text="${errorMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Initialize Seats Form (shown only when no seats exist) -->
+    <div th:if="${#maps.isEmpty(seatsByRow)}" class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Initialize Seats</h5>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info" role="alert">
+          <i class="fas fa-info-circle me-2"></i> No seats have been configured for this screen yet. Use the form below to initialize the seating layout.
+        </div>
+        <form th:action="@{/admin/seats/theatre/{theatreId}/screen/{screenNumber}/initialize(theatreId=${theatre.id},screenNumber=${screenNumber})}" method="post">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="rows" class="form-label">Number of Rows</label>
+              <input type="number" class="form-control" id="rows" name="rows" min="1" max="26" value="10" required>
+              <div class="form-text">Maximum 26 rows (A-Z)</div>
+            </div>
+            <div class="col-md-6">
+              <label for="seatsPerRow" class="form-label">Seats Per Row</label>
+              <input type="number" class="form-control" id="seatsPerRow" name="seatsPerRow" min="1" max="50" value="12" required>
+              <div class="form-text">Maximum 50 seats per row</div>
+            </div>
+          </div>
+          <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i> Default seat configuration will be applied:
+            <ul class="mb-0">
+              <li>Front rows (A-B): Standard seats (price multiplier: 1.0)</li>
+              <li>Middle rows: Premium seats (price multiplier: 1.2)</li>
+              <li>Back rows: VIP seats (price multiplier: 1.5)</li>
+              <li>Accessible seats will be placed at the ends of the middle row (price multiplier: 1.0)</li>
+            </ul>
+          </div>
+          <button type="submit" class="btn btn-primary">Initialize Seats</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Seat Management (shown only when seats exist) -->
+    <div th:if="${!#maps.isEmpty(seatsByRow)}" class="row">
+      <div class="col-lg-8">
+        <div class="card mb-4">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Seating Layout</h5>
+            <div>
+              <button type="button" class="btn btn-sm btn-outline-secondary me-2" id="selectAllBtn">
+                <i class="fas fa-check-square me-1"></i>Select All
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="clearSelectionBtn">
+                <i class="fas fa-times-circle me-1"></i>Clear Selection
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="seat-grid">
+              <div class="screen">SCREEN</div>
+
+              <!-- Iterate through rows -->
+              <div th:each="rowEntry : ${seatsByRow}" class="seat-row">
+                <div class="row-name" th:text="${rowEntry.key}">A</div>
+
+                <!-- Iterate through seats in this row -->
+                <div th:each="seat : ${rowEntry.value}"
+                     th:id="${'seat-' + seat.id}"
+                     th:data-id="${seat.id}"
+                     th:data-seat="${seat.rowName + seat.seatNumber}"
+                     th:data-type="${seat.seatType}"
+                     th:data-price="${seat.priceMultiplier}"
+                     th:class="'admin-seat ' + ${seat.seatType.toString().toLowerCase()}"
+                     th:text="${seat.rowName + seat.seatNumber}"
+                     onclick="toggleSeatSelection(this)">
+                  A1
+                </div>
+              </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="d-flex justify-content-center mt-4">
+              <div class="d-flex align-items-center me-3">
+                <div class="admin-seat standard me-1" style="width: 20px; height: 20px;"></div>
+                <small>Standard</small>
+              </div>
+              <div class="d-flex align-items-center me-3">
+                <div class="admin-seat premium me-1" style="width: 20px; height: 20px;"></div>
+                <small>Premium</small>
+              </div>
+              <div class="d-flex align-items-center me-3">
+                <div class="admin-seat vip me-1" style="width: 20px; height: 20px;"></div>
+                <small>VIP</small>
+              </div>
+              <div class="d-flex align-items-center">
+                <div class="admin-seat accessible me-1" style="width: 20px; height: 20px;"></div>
+                <small>Accessible</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bulk Update Form -->
+          <div class="seat-actions" id="bulkUpdateForm">
+            <form th:action="@{/admin/seats/bulkUpdate}" method="post">
+              <input type="hidden" name="theatreId" th:value="${theatre.id}">
+              <input type="hidden" name="screenNumber" th:value="${screenNumber}">
+              <input type="hidden" name="selection" id="selectedSeatsInput" value="">
+
+              <div class="row align-items-end">
+                <div class="col-md-4">
+                  <label for="bulkSeatType" class="form-label">Seat Type</label>
+                  <select class="form-select" name="seatType" id="bulkSeatType" required>
+                    <option value="">Select Type</option>
+                    <option th:each="type : ${seatTypes}" th:value="${type}" th:text="${type}">STANDARD</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="bulkPriceMultiplier" class="form-label">Price Multiplier</label>
+                  <input type="number" class="form-control" name="priceMultiplier" id="bulkPriceMultiplier" step="0.1" min="0.5" max="3.0" value="1.0" required>
+                </div>
+                <div class="col-md-4">
+                  <button type="submit" class="btn btn-primary w-100" disabled id="updateSelectedBtn">
+                    <i class="fas fa-save me-1"></i>Update Selected Seats (<span id="selectedCount">0</span>)
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Delete Seats Button -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5>Danger Zone</h5>
+            <p>Deleting all seats will remove the entire seating configuration for this screen.</p>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteSeatsModal">
+              <i class="fas fa-trash-alt me-1"></i>Delete All Seats
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row Management -->
+      <div class="col-lg-4">
+        <div class="card mb-4">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">Update Row</h5>
+          </div>
+          <div class="card-body">
+            <form th:action="@{/admin/seats/updateRow}" method="post">
+              <input type="hidden" name="theatreId" th:value="${theatre.id}">
+              <input type="hidden" name="screenNumber" th:value="${screenNumber}">
+
+              <div class="mb-3">
+                <label for="rowName" class="form-label">Row</label>
+                <select class="form-select" name="rowName" id="rowName" required>
+                  <option value="">Select Row</option>
+                  <option th:each="rowName : ${seatsByRow.keySet()}" th:value="${rowName}" th:text="${rowName}">A</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="rowSeatType" class="form-label">Seat Type</label>
+                <select class="form-select" name="seatType" id="rowSeatType" required>
+                  <option value="">Select Type</option>
+                  <option th:each="type : ${seatTypes}" th:value="${type}" th:text="${type}">STANDARD</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label for="rowPriceMultiplier" class="form-label">Price Multiplier</label>
+                <input type="number" class="form-control" name="priceMultiplier" id="rowPriceMultiplier" step="0.1" min="0.5" max="3.0" value="1.0" required>
+              </div>
+              <button type="submit" class="btn btn-primary">Update Entire Row</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Individual Seat Update -->
+        <div class="card">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">Selected Seat Details</h5>
+          </div>
+          <div class="card-body">
+            <div id="noSeatSelected">
+              <p class="text-muted">Click on a seat to view and edit its details.</p>
+            </div>
+            <div id="seatDetails" class="d-none">
+              <form th:action="@{/admin/seats/update/__${0}__}" method="post" id="seatUpdateForm">
+                <div class="mb-3">
+                  <label class="form-label">Seat</label>
+                  <input type="text" class="form-control" id="displaySeatId" readonly>
+                </div>
+                <div class="mb-3">
+                  <label for="seatType" class="form-label">Type</label>
+                  <select class="form-select" name="seatType" id="seatType" required>
+                    <option th:each="type : ${seatTypes}" th:value="${type}" th:text="${type}">STANDARD</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label for="priceMultiplier" class="form-label">Price Multiplier</label>
+                  <input type="number" class="form-control" name="priceMultiplier" id="priceMultiplier" step="0.1" min="0.5" max="3.0" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Seat</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Delete Seats Confirmation Modal -->
+<div class="modal fade" id="deleteSeatsModal" tabindex="-1" aria-labelledby="deleteSeatsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteSeatsModalLabel">Confirm Delete</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete all seats for screen <strong th:text="${screenNumber}">1</strong>?</p>
+        <p class="text-danger">This action cannot be undone. Any existing bookings for this screen may be affected.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form th:action="@{/admin/seats/theatre/{theatreId}/screen/{screenNumber}/delete(theatreId=${theatre.id},screenNumber=${screenNumber})}" method="post">
+          <button type="submit" class="btn btn-danger">Delete All Seats</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div th:replace="fragments/footer :: footer"></div>
+
+<!-- Seat Management JavaScript -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const selectedSeats = new Set();
+    const selectedSeatsInput = document.getElementById('selectedSeatsInput');
+    const selectedCount = document.getElementById('selectedCount');
+    const updateSelectedBtn = document.getElementById('updateSelectedBtn');
+    const selectAllBtn = document.getElementById('selectAllBtn');
+    const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+
+    const noSeatSelected = document.getElementById('noSeatSelected');
+    const seatDetails = document.getElementById('seatDetails');
+    const seatUpdateForm = document.getElementById('seatUpdateForm');
+    const displaySeatId = document.getElementById('displaySeatId');
+    const seatTypeSelect = document.getElementById('seatType');
+    const priceMultiplier = document.getElementById('priceMultiplier');
+
+    // Toggle selection for a single seat
+    window.toggleSeatSelection = function(seatElement) {
+      const seatId = seatElement.getAttribute('data-id');
+      const seatLabel = seatElement.getAttribute('data-seat');
+
+      if (seatElement.classList.contains('selected')) {
+        // Deselect
+        seatElement.classList.remove('selected');
+        selectedSeats.delete(seatLabel);
+      } else {
+        // Select
+        seatElement.classList.add('selected');
+        selectedSeats.add(seatLabel);
+
+        // Update individual seat form
+        if (selectedSeats.size === 1) {
+          // Only show individual seat details when exactly one seat is selected
+          displaySeatId.value = seatLabel;
+          seatTypeSelect.value = seatElement.getAttribute('data-type');
+          priceMultiplier.value = seatElement.getAttribute('data-price');
+
+          // Update form action URL
+          seatUpdateForm.action = seatUpdateForm.action.replace(/\/\d+$/, '/' + seatId);
+
+          // Show details section
+          noSeatSelected.classList.add('d-none');
+          seatDetails.classList.remove('d-none');
+        } else {
+          // Hide details when multiple seats selected
+          noSeatSelected.classList.remove('d-none');
+          seatDetails.classList.add('d-none');
+        }
+      }
+
+      // Update selected count and input
+      selectedCount.textContent = selectedSeats.size;
+      selectedSeatsInput.value = Array.from(selectedSeats).join(',');
+
+      // Enable/disable the update button
+      updateSelectedBtn.disabled = selectedSeats.size === 0;
+    };
+
+    // Select all seats
+    selectAllBtn.addEventListener('click', function() {
+      const seats = document.querySelectorAll('.admin-seat');
+      seats.forEach(seat => {
+        if (!seat.classList.contains('selected')) {
+          seat.classList.add('selected');
+          selectedSeats.add(seat.getAttribute('data-seat'));
+        }
+      });
+
+      // Update counter and input
+      selectedCount.textContent = selectedSeats.size;
+      selectedSeatsInput.value = Array.from(selectedSeats).join(',');
+      updateSelectedBtn.disabled = false;
+
+      // Hide individual seat details when multiple seats selected
+      noSeatSelected.classList.remove('d-none');
+      seatDetails.classList.add('d-none');
+    });
+
+    // Clear selection
+    clearSelectionBtn.addEventListener('click', function() {
+      const seats = document.querySelectorAll('.admin-seat.selected');
+      seats.forEach(seat => {
+        seat.classList.remove('selected');
+      });
+
+      selectedSeats.clear();
+      selectedCount.textContent = 0;
+      selectedSeatsInput.value = '';
+      updateSelectedBtn.disabled = true;
+
+      // Hide seat details
+      noSeatSelected.classList.remove('d-none');
+      seatDetails.classList.add('d-none');
+    });
+  });
+</script>
+</body>
+</html>

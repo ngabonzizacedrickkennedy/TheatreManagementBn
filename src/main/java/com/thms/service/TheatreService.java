@@ -107,4 +107,8 @@ public class TheatreService {
         theatre.setImageUrl(dto.getImageUrl());
         return theatre;
     }
+    @Transactional(readOnly = true)
+    public Optional<Theatre> getTheatreEntityById(Long id) {
+        return theatreRepository.findById(id);
+    }
 }

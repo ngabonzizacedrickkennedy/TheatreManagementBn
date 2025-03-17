@@ -158,6 +158,7 @@ public class BookingService {
         dto.setUserEmail(booking.getUser().getEmail());
         dto.setScreeningId(booking.getScreening().getId());
         dto.setMovieTitle(booking.getScreening().getMovie().getTitle());
+        dto.setMovieUrl(booking.getScreening().getMovie().getTrailerUrl());
         dto.setTheatreName(booking.getScreening().getTheatre().getName());
         dto.setScreeningTime(booking.getScreening().getStartTime());
         dto.setBookingTime(booking.getBookingTime());

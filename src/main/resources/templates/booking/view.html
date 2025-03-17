@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Booking Details')">
+    <title>Booking Details - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-ticket-alt me-2"></i>Booking Details</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/bookings}">My Bookings</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Booking Details</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Booking Details -->
+        <div class="booking-details">
+            <div class="booking-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h3>Booking <span class="booking-number" th:text="${booking.bookingNumber}">BK12345678</span></h3>
+                        <p class="text-muted" th:text="${'Booked on ' + #temporals.format(booking.bookingTime, 'MMM dd, yyyy HH:mm')}">
+                            Booked on Jan 01, 2023 19:30
+                        </p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <span th:if="${booking.paymentStatus.name() == 'COMPLETED'}" class="badge bg-success">Confirmed</span>
+                        <span th:if="${booking.paymentStatus.name() == 'PENDING'}" class="badge bg-warning text-dark">Pending</span>
+                        <span th:if="${booking.paymentStatus.name() == 'CANCELLED'}" class="badge bg-danger">Cancelled</span>
+                        <span th:if="${booking.paymentStatus.name() == 'REFUNDED'}" class="badge bg-info">Refunded</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <h4>Movie Details</h4>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3 mb-md-0">
+                                    <!-- You could add an API to fetch movie poster by title if needed -->
+<!--                                    <img src="https://placehold.co/200x300?text=Movie" class="img-fluid rounded" alt="Movie Poster">-->
+                                    <img th:src="${booking.movieUrl != null ? booking.movieUrl : 'https://placehold.co/200x300?text=Movie'}">
+                                </div>
+                                <div class="col-md-8">
+                                    <h5 th:text="${booking.movieTitle}">Movie Title</h5>
+                                    <p><strong>Theatre:</strong> <span th:text="${booking.theatreName}">Theatre Name</span></p>
+                                    <p><strong>Date & Time:</strong> <span th:text="${#temporals.format(booking.screeningTime, 'EEE, MMM dd, yyyy HH:mm')}">Date Time</span></p>
+                                    <p><strong>Total Amount:</strong> <span th:text="${'$' + #numbers.formatDecimal(booking.totalAmount, 1, 2)}">$30.00</span></p>
+
+                                    <!-- Display booked seats -->
+                                    <div>
+                                        <strong>Seats:</strong>
+                                        <div class="booking-seats">
+                                            <span th:each="seat : ${booking.bookedSeats}" class="booking-seat" th:text="${seat}">A1</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h4>Payment Information</h4>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Status:</strong>
+                                        <span th:if="${booking.paymentStatus.name() == 'COMPLETED'}" class="text-success">Paid</span>
+                                        <span th:if="${booking.paymentStatus.name() == 'PENDING'}" class="text-warning">Pending</span>
+                                        <span th:if="${booking.paymentStatus.name() == 'CANCELLED'}" class="text-danger">Cancelled</span>
+                                        <span th:if="${booking.paymentStatus.name() == 'REFUNDED'}" class="text-info">Refunded</span>
+                                    </p>
+                                    <p><strong>Payment Method:</strong> <span th:text="${booking.paymentMethod != null ? booking.paymentMethod : 'Not specified'}">Credit Card</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Amount:</strong> <span th:text="${'$' + #numbers.formatDecimal(booking.totalAmount, 1, 2)}">$30.00</span></p>
+                                    <p><strong>Date:</strong> <span th:text="${#temporals.format(booking.bookingTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 19:30</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <h4>Actions</h4>
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <!-- Only allow cancellation if booking is not yet cancelled and movie screening is in the future -->
+                            <div th:if="${booking.paymentStatus.name() != 'CANCELLED' && booking.paymentStatus.name() != 'REFUNDED' && booking.screeningTime.isAfter(T(java.time.LocalDateTime).now())}">
+                                <button type="button" class="btn btn-danger w-100 mb-3"
+                                        data-bs-toggle="modal" data-bs-target="#cancelModal">
+                                    <i class="fas fa-times-circle me-2"></i>Cancel Booking
+                                </button>
+                            </div>
+
+                            <a th:href="@{/bookings}" class="btn btn-secondary w-100 mb-3">
+                                <i class="fas fa-arrow-left me-2"></i>Back to My Bookings
+                            </a>
+
+                            <a href="#" class="btn btn-primary w-100" onclick="window.print()">
+                                <i class="fas fa-print me-2"></i>Print Ticket
+                            </a>
+                        </div>
+                    </div>
+
+                    <h4>Customer Information</h4>
+                    <div class="card">
+                        <div class="card-body">
+                            <p><strong>Name:</strong> <span sec:authentication="name">Username</span></p>
+                            <p><strong>Email:</strong> <span th:text="${booking.userEmail}">user@example.com</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Cancel Booking Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelModalLabel">Confirm Cancellation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this booking?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Keep Booking</button>
+                <form th:action="@{/bookings/{id}/cancel(id=${booking.id})}" method="post">
+                    <button type="submit" class="btn btn-danger">Yes, Cancel Booking</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="fragments/footer :: footer"></div>
+
+<style>
+    .booking-details {
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .booking-header {
+        border-bottom: 1px solid #e9ecef;
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+    }
+
+    .booking-number {
+        background-color: #f8f9fa;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-family: monospace;
+    }
+
+    .booking-seats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 8px;
+    }
+
+    .booking-seat {
+        background-color: #e9ecef;
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-size: 0.85rem;
+    }
+</style>
+</body>
+</html>

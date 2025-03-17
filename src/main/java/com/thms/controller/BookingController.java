@@ -67,22 +67,34 @@ public class BookingController {
 
     @GetMapping("/screening/{screeningId}")
     public String selectSeats(@PathVariable("screeningId") Long screeningId, Model model) {
-        Screening screening = screeningService.getScreeningEntityById(screeningId)
-            .orElseThrow(() -> new RuntimeException("Screening not found with id: " + screeningId));
-        
-        // Get theatre seats
-        var seats = seatService.getSeatsByTheatreAndScreen(screening.getTheatre().getId(), screening.getScreenNumber());
-        
-        // Get already booked seats
-        Set<String> bookedSeats = bookingService.getBookedSeatsByScreeningId(screeningId);
-        
-        model.addAttribute("screening", screening);
-        model.addAttribute("movie", screening.getMovie());
-        model.addAttribute("theatre", screening.getTheatre());
-        model.addAttribute("seats", seats);
-        model.addAttribute("bookedSeats", bookedSeats);
-        
-        return "booking/seat-selection";
+        try {
+            Screening screening = screeningService.getScreeningEntityById(screeningId)
+                    .orElseThrow(() -> new RuntimeException("Screening not found with id: " + screeningId));
+
+            // Get theatre seats
+            var seats = seatService.getSeatsByTheatreAndScreen(screening.getTheatre().getId(), screening.getScreenNumber());
+
+            // Get already booked seats
+            Set<String> bookedSeats = bookingService.getBookedSeatsByScreeningId(screeningId);
+
+            // Debug logging
+//            System.out.println("Screening: " + screening);
+//            System.out.println("Movie: " + screening.getMovie());
+//            System.out.println("Theatre: " + screening.getTheatre());
+//            System.out.println("Seats size: " + seats.size());
+//            System.out.println("Booked seats: " + bookedSeats);
+
+            model.addAttribute("screening", screening);
+            model.addAttribute("movie", screening.getMovie());
+            model.addAttribute("theatre", screening.getTheatre());
+            model.addAttribute("seats", seats);
+            model.addAttribute("bookedSeats", bookedSeats);
+
+            return "booking/seat-selection";
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     @PreAuthorize("isAuthenticated()")

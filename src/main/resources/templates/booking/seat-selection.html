@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Select Seats')">
+    <title>Select Seats - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-couch me-2"></i>Select Your Seats</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/movies/{id}(id=${movie.id})}">Movie Details</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Select Seats</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Movie and Screening Info -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <img th:src="${movie.posterImageUrl != null ? movie.posterImageUrl : 'https://placehold.co/300x450?text=No+Poster'}"
+                     class="img-fluid rounded" alt="Movie Poster">
+            </div>
+            <div class="col-md-9">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 th:text="${movie.title}">Movie Title</h3>
+                        <div class="mb-3">
+                            <span class="badge bg-primary me-2" th:text="${movie.genre}">Genre</span>
+                            <span class="badge bg-secondary me-2" th:text="${movie.rating}">Rating</span>
+                            <span class="badge bg-info text-dark" th:text="${movie.durationMinutes + ' min'}">Duration</span>
+                        </div>
+                        <p><strong>Theatre:</strong> <span th:text="${theatre.name}">Theatre Name</span></p>
+                        <p><strong>Screen:</strong> <span th:text="${'Screen ' + screening.screenNumber}">Screen #</span></p>
+                        <p><strong>Date & Time:</strong> <span th:text="${#temporals.format(screening.startTime, 'EEE, MMM dd, yyyy HH:mm')}">Date Time</span></p>
+                        <p><strong>Format:</strong> <span th:text="${screening.format}">Format</span></p>
+                        <p><strong>Base Price:</strong> <span th:text="${'$' + #numbers.formatDecimal(screening.basePrice, 1, 2)}">$10.00</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seat Selection -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Choose Your Seats</h5>
+            </div>
+            <div class="card-body">
+                <div class="seat-container">
+                    <div class="screen">SCREEN</div>
+
+                    <!-- Display all seats directly without complex sorting -->
+                    <div th:each="seat : ${seats}"
+                         class="seat-item"
+                         th:classappend="${seat.seatType.toString().toLowerCase() +
+                  (bookedSeats.contains(seat.rowName + seat.seatNumber) ? ' booked' : '')}"
+                         th:data-seat="${seat.rowName + seat.seatNumber}"
+                         th:data-row="${seat.rowName}"
+                         th:data-number="${seat.seatNumber}"
+                         th:data-type="${seat.seatType}"
+                         th:data-price="${screening.basePrice * seat.priceMultiplier}"
+                         th:text="${seat.rowName + seat.seatNumber}">
+                        A1
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="seat-legend">
+                        <div class="legend-item">
+                            <div class="legend-seat bg-secondary"></div>
+                            <span>Standard</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-seat bg-warning"></div>
+                            <span>Premium</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-seat" style="background-color: #6f42c1;"></div>
+                            <span>VIP</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-seat bg-success"></div>
+                            <span>Accessible</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-seat bg-primary"></div>
+                            <span>Selected</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-seat bg-danger"></div>
+                            <span>Booked</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Seats Summary -->
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5>Selected Seats</h5>
+                        <div id="selectedSeatsContainer">
+                            <p id="noSeatsSelected">No seats selected</p>
+                            <div id="selectedSeatsList" class="d-none"></div>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <h5>Total Price:</h5>
+                            <h5 id="totalPrice">$0.00</h5>
+                        </div>
+                        <form th:action="@{/bookings/screening/{id}(id=${screening.id})}" method="post">
+                            <input type="hidden" id="selectedSeatsInput" name="selectedSeats">
+                            <button type="submit" class="btn btn-primary mt-3 w-100" id="continueBtn" disabled>
+                                Continue to Checkout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+
+<style>
+    .seat-container {
+        margin: 20px 0;
+        text-align: center;
+    }
+
+    .screen {
+        background-color: #d1d1d1;
+        color: #333;
+        padding: 5px 20px;
+        width: 80%;
+        text-align: center;
+        border-radius: 5px;
+        margin: 0 auto 25px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .seat-item {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 35px;
+        height: 35px;
+        margin: 4px;
+        border-radius: 8px 8px 0 0;
+        background-color: #ced4da;
+        color: #fff;
+        cursor: pointer;
+        font-size: 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .seat-item:hover {
+        transform: scale(1.05);
+    }
+
+    .seat-item.selected {
+        background-color: #0d6efd;
+    }
+
+    .seat-item.booked {
+        background-color: #dc3545;
+        cursor: not-allowed;
+    }
+
+    .seat-item.standard {
+        background-color: #6c757d;
+    }
+
+    .seat-item.premium {
+        background-color: #fd7e14;
+    }
+
+    .seat-item.vip {
+        background-color: #6f42c1;
+    }
+
+    .seat-item.accessible {
+        background-color: #20c997;
+    }
+
+    .seat-legend {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .legend-seat {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px 4px 0 0;
+    }
+</style>
+
+<!-- Seat Selection Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectedSeats = [];
+        const noSeatsSelected = document.getElementById('noSeatsSelected');
+        const selectedSeatsList = document.getElementById('selectedSeatsList');
+        const selectedSeatsInput = document.getElementById('selectedSeatsInput');
+        const totalPriceElement = document.getElementById('totalPrice');
+        const continueBtn = document.getElementById('continueBtn');
+
+        // Organize seats by row
+        const seatsByRow = {};
+        const seatItems = document.querySelectorAll('.seat-item');
+
+        // First, create rows dynamically
+        seatItems.forEach(seat => {
+            const row = seat.getAttribute('data-row');
+            const seatNum = parseInt(seat.getAttribute('data-number'));
+
+            if (!seatsByRow[row]) {
+                seatsByRow[row] = [];
+            }
+
+            seatsByRow[row].push({
+                element: seat,
+                number: seatNum
+            });
+        });
+
+        // Remove all seats from DOM
+        seatItems.forEach(seat => seat.remove());
+
+        // Sort rows and add them back in order
+        const container = document.querySelector('.seat-container');
+        const screen = container.querySelector('.screen');
+
+        Object.keys(seatsByRow).sort().forEach(row => {
+            // Create a row div
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'seat-row';
+            rowDiv.style.display = 'flex';
+            rowDiv.style.justifyContent = 'center';
+            rowDiv.style.marginBottom = '8px';
+
+            // Add row label
+            const rowLabel = document.createElement('div');
+            rowLabel.className = 'row-name';
+            rowLabel.textContent = row;
+            rowLabel.style.width = '30px';
+            rowLabel.style.marginRight = '10px';
+            rowLabel.style.fontWeight = 'bold';
+            rowLabel.style.display = 'flex';
+            rowLabel.style.alignItems = 'center';
+            rowLabel.style.justifyContent = 'center';
+            rowDiv.appendChild(rowLabel);
+
+            // Sort and add seats
+            seatsByRow[row].sort((a, b) => a.number - b.number).forEach(seat => {
+                rowDiv.appendChild(seat.element);
+            });
+
+            // Insert after screen
+            screen.insertAdjacentElement('afterend', rowDiv);
+        });
+
+        // Add click event listeners to all seats
+        document.querySelectorAll('.seat-item').forEach(seat => {
+            seat.addEventListener('click', function() {
+                // Skip if the seat is already booked
+                if (this.classList.contains('booked')) {
+                    return;
+                }
+
+                const seatId = this.getAttribute('data-seat');
+                const seatPrice = parseFloat(this.getAttribute('data-price'));
+                const seatType = this.getAttribute('data-type');
+
+                // Toggle selection
+                if (this.classList.contains('selected')) {
+                    // Remove from selected
+                    this.classList.remove('selected');
+                    const index = selectedSeats.findIndex(seat => seat.id === seatId);
+                    if (index !== -1) {
+                        selectedSeats.splice(index, 1);
+                    }
+                } else {
+                    // Add to selected
+                    this.classList.add('selected');
+                    selectedSeats.push({
+                        id: seatId,
+                        price: seatPrice,
+                        type: seatType
+                    });
+                }
+
+                // Update the summary
+                updateSelectedSeatsSummary();
+            });
+        });
+
+        function updateSelectedSeatsSummary() {
+            if (selectedSeats.length === 0) {
+                noSeatsSelected.classList.remove('d-none');
+                selectedSeatsList.classList.add('d-none');
+                totalPriceElement.textContent = '$0.00';
+                continueBtn.disabled = true;
+                selectedSeatsInput.value = '';
+            } else {
+                noSeatsSelected.classList.add('d-none');
+                selectedSeatsList.classList.remove('d-none');
+
+                // Sort selected seats for cleaner display
+                selectedSeats.sort((a, b) => a.id.localeCompare(b.id));
+
+                // Display selected seats
+                selectedSeatsList.innerHTML = '';
+                let totalPrice = 0;
+
+                selectedSeats.forEach(seat => {
+                    const seatElement = document.createElement('div');
+                    seatElement.className = 'mb-2 d-flex justify-content-between';
+                    seatElement.innerHTML = `
+            <div>
+              <span class="badge bg-${getSeatColor(seat.type)} me-2">${seat.id}</span>
+              <span class="text-muted">${seat.type.toLowerCase()}</span>
+            </div>
+            <div>$${seat.price.toFixed(2)}</div>
+          `;
+                    selectedSeatsList.appendChild(seatElement);
+                    totalPrice += seat.price;
+                });
+
+                // Update the form input value and total price
+                totalPriceElement.textContent = '$' + totalPrice.toFixed(2);
+                selectedSeatsInput.value = selectedSeats.map(seat => seat.id).join(',');
+                continueBtn.disabled = false;
+            }
+        }
+
+        function getSeatColor(seatType) {
+            switch(seatType) {
+                case 'STANDARD': return 'secondary';
+                case 'PREMIUM': return 'warning text-dark';
+                case 'VIP': return 'primary';
+                case 'ACCESSIBLE': return 'success';
+                default: return 'secondary';
+            }
+        }
+
+        console.log("Seat selection script initialized with " + seatItems.length + " seats");
+    });
+</script>
+</body>
+</html>

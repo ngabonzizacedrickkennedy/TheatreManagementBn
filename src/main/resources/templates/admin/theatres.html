@@ -101,6 +101,9 @@
                 </div>
               </td>
               <td>
+                <!-- In your existing theatre list page, update the Actions column to include a link to manage seats -->
+                <!-- Find the section that looks like this: -->
+
                 <div class="btn-group" role="group">
                   <a th:href="@{/theatres/{id}(id=${theatre.id})}" class="btn btn-sm btn-outline-secondary" title="View">
                     <i class="fas fa-eye"></i>
@@ -108,7 +111,8 @@
                   <a th:href="@{/admin/theatres/{id}/edit(id=${theatre.id})}" class="btn btn-sm btn-outline-primary" title="Edit">
                     <i class="fas fa-edit"></i>
                   </a>
-                  <a th:href="@{/admin/theatres/{id}/seats(id=${theatre.id})}" class="btn btn-sm btn-outline-info" title="Manage Seats">
+                  <!-- Add this new button to manage seats -->
+                  <a th:href="@{/admin/seats/theatre/{id}(id=${theatre.id})}" class="btn btn-sm btn-outline-info" title="Manage Seats">
                     <i class="fas fa-chair"></i>
                   </a>
                   <button type="button" class="btn btn-sm btn-outline-danger" title="Delete"

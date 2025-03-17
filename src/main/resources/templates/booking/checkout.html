@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Booking Checkout')">
+    <title>Checkout - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-shopping-cart me-2"></i>Booking Checkout</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/movies/{id}(id=${movie.id})}">Movie Details</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/bookings/screening/{id}(id=${screening.id})}">Select Seats</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Checkout</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row">
+            <!-- Order Summary -->
+            <div class="col-md-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Order Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <img th:src="${movie.posterImageUrl != null ? movie.posterImageUrl : 'https://placehold.co/300x450?text=No+Poster'}"
+                                     class="img-fluid rounded" alt="Movie Poster">
+                            </div>
+                            <div class="col-md-8">
+                                <h4 th:text="${movie.title}">Movie Title</h4>
+                                <p>
+                                    <span class="badge bg-primary me-2" th:text="${movie.genre}">Genre</span>
+                                    <span class="badge bg-secondary me-2" th:text="${movie.rating}">Rating</span>
+                                    <span class="badge bg-info text-dark" th:text="${movie.durationMinutes + ' min'}">Duration</span>
+                                </p>
+                                <p><strong>Theatre:</strong> <span th:text="${theatre.name}">Theatre Name</span></p>
+                                <p><strong>Screen:</strong> <span th:text="${'Screen ' + screening.screenNumber}">Screen #</span></p>
+                                <p><strong>Date & Time:</strong> <span th:text="${#temporals.format(screening.startTime, 'EEE, MMM dd, yyyy HH:mm')}">Date Time</span></p>
+                                <p><strong>Format:</strong> <span th:text="${screening.format}">Format</span></p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Selected Seats</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-2 fw-bold">
+                                    <div class="col-4">Seat</div>
+                                    <div class="col-4">Type</div>
+                                    <div class="col-4 text-end">Price</div>
+                                </div>
+                                <hr>
+                                <div th:each="seat : ${selectedSeats}" class="row mb-2">
+                                    <div class="col-4">
+                                        <span class="badge bg-primary" th:text="${seat}">A1</span>
+                                    </div>
+                                    <div class="col-4">Standard</div>
+                                    <div class="col-4 text-end">$10.00</div>
+                                </div>
+                                <hr>
+                                <div class="row fw-bold">
+                                    <div class="col-8">Total</div>
+                                    <div class="col-4 text-end" th:text="${'$' + #numbers.formatDecimal(totalPrice, 1, 2)}">$30.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Information -->
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Payment Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/bookings/confirm}" method="post">
+                            <input type="hidden" name="screeningId" th:value="${screening.id}">
+                            <input type="hidden" name="selectedSeats" th:value="${#strings.arrayJoin(selectedSeats, ',')}">
+
+                            <div class="mb-3">
+                                <label for="paymentMethod" class="form-label">Payment Method</label>
+                                <select class="form-select" id="paymentMethod" name="paymentMethod" required>
+                                    <option value="">Select payment method</option>
+                                    <option th:each="method : ${paymentMethods}" th:value="${method}" th:text="${method}">Credit Card</option>
+                                </select>
+                            </div>
+
+                            <!-- Credit Card Information (shown only when Credit Card is selected) -->
+                            <div id="creditCardForm" class="d-none">
+                                <div class="mb-3">
+                                    <label for="cardNumber" class="form-label">Card Number</label>
+                                    <input type="text" class="form-control" id="cardNumber" placeholder="**** **** **** ****">
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="expiryDate" class="form-label">Expiry Date</label>
+                                        <input type="text" class="form-control" id="expiryDate" placeholder="MM/YY">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="cvv" class="form-label">CVV</label>
+                                        <input type="text" class="form-control" id="cvv" placeholder="***">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="cardHolderName" class="form-label">Cardholder Name</label>
+                                    <input type="text" class="form-control" id="cardHolderName">
+                                </div>
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="termsCheck" required>
+                                <label class="form-check-label" for="termsCheck">I agree to the terms and conditions</label>
+                            </div>
+
+                            <div class="alert alert-info" role="alert">
+                                <i class="fas fa-info-circle me-2"></i> This is a demonstration system. No actual payment will be processed.
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">Complete Booking</button>
+                                <a th:href="@{/bookings/screening/{id}(id=${screening.id})}" class="btn btn-outline-secondary">Back to Seat Selection</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+
+<!-- Payment Method Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentMethodSelect = document.getElementById('paymentMethod');
+        const creditCardForm = document.getElementById('creditCardForm');
+
+        paymentMethodSelect.addEventListener('change', function() {
+            if (this.value === 'Credit Card' || this.value === 'Debit Card') {
+                creditCardForm.classList.remove('d-none');
+            } else {
+                creditCardForm.classList.add('d-none');
+            }
+        });
+    });
+</script>
+</body>
+</html>

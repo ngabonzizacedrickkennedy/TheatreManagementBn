@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
 
@@ -102,32 +103,6 @@ public class AdminScreeningController {
         return "admin/screenings/create";
     }
 
-    @PostMapping("/create")
-    public String createScreening(
-            @ModelAttribute("screening") ScreeningDTO screeningDTO,
-            BindingResult result,
-            RedirectAttributes redirectAttributes,
-            Model model) {
-
-        if (result.hasErrors()) {
-            model.addAttribute("movies", movieService.getAllMovies());
-            model.addAttribute("theatres", theatreService.getAllTheatres());
-            model.addAttribute("formats", Screening.ScreeningFormat.values());
-            System.out.println("in screenings !!"+result.getAllErrors());
-            return "admin/screenings/create";
-        }
-
-        try {
-            ScreeningDTO created = screeningService.createScreening(screeningDTO);
-            System.out.println("Great !!! "+created);
-            redirectAttributes.addFlashAttribute("successMessage", "Screening created successfully!");
-            return "redirect:/admin/screenings";
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error creating screening: " + e.getMessage());
-            return "redirect:/admin/screenings/create";
-        }
-    }
-
     @GetMapping("/{id}")
     public String viewScreening(@PathVariable("id") Long id, Model model) {
         ScreeningDTO screening = screeningService.getScreeningById(id)
@@ -148,6 +123,46 @@ public class AdminScreeningController {
         model.addAttribute("theatres", theatreService.getAllTheatres());
         model.addAttribute("formats", Screening.ScreeningFormat.values());
         return "admin/screenings/edit";
+    }
+
+    @PostMapping("/create")
+    public String createScreening(@Valid @ModelAttribute("screening") ScreeningDTO screeningDTO,
+                                  BindingResult result,
+                                  RedirectAttributes redirectAttributes,
+                                  Model model) {
+        // If there are already validation errors, return to the form
+        if (result.hasErrors()) {
+            model.addAttribute("movies", movieService.getAllMovies());
+            model.addAttribute("theatres", theatreService.getAllTheatres());
+            model.addAttribute("formats", Screening.ScreeningFormat.values());
+            return "admin/screenings/create";
+        }
+
+        try {
+            // Combine date and time strings into LocalDateTime
+            if (screeningDTO.getStartDateString() != null && screeningDTO.getStartTimeString() != null) {
+                LocalDateTime combinedDateTime = LocalDateTime.parse(
+                        screeningDTO.getStartDateString() + "T" + screeningDTO.getStartTimeString() + ":00",
+                        DateTimeFormatter.ISO_LOCAL_DATE_TIME
+                );
+                screeningDTO.setStartTime(combinedDateTime);
+            } else {
+                result.rejectValue("startDateString", "NotNull", "Date is required");
+                result.rejectValue("startTimeString", "NotNull", "Time is required");
+                model.addAttribute("movies", movieService.getAllMovies());
+                model.addAttribute("theatres", theatreService.getAllTheatres());
+                model.addAttribute("formats", Screening.ScreeningFormat.values());
+                return "admin/screenings/create";
+            }
+
+            // Create the screening
+            ScreeningDTO createdScreening = screeningService.createScreening(screeningDTO);
+            redirectAttributes.addFlashAttribute("successMessage", "Screening created successfully!");
+            return "redirect:/admin/screenings";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error creating screening: " + e.getMessage());
+            return "redirect:/admin/screenings/create";
+        }
     }
 
     @PostMapping("/{id}/edit")

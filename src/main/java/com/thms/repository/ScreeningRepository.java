@@ -23,4 +23,6 @@ public interface ScreeningRepository extends JpaRepository<Screening, Long> {
     
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.screening.id = :screeningId")
     Long countBookingsByScreeningId(Long screeningId);
+
+    List<Screening> findByStartTimeAfterOrderByStartTimeAsc(LocalDateTime startTime);
 }
