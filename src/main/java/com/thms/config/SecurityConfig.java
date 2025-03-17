@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import lombok.RequiredArgsConstructor;
@@ -63,6 +64,7 @@ public class SecurityConfig {
                 .loginPage("/auth/login")
                 .loginProcessingUrl("/auth/login")
                 .defaultSuccessUrl("/", true)
+                .successHandler(authenticationSuccessHandler())
                 .failureUrl("/auth/login?error=true")
                 .permitAll()
             )
@@ -83,5 +85,9 @@ public class SecurityConfig {
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         return http.build();
+    }
+    @Bean
+    public AuthenticationSuccessHandler authenticationSuccessHandler() {
+        return new CustomAuthSuccessHandler();
     }
 }

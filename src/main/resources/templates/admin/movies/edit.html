@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Edit Movie')">
+  <title>Edit Movie - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2><i class="fas fa-film me-2"></i>Edit Movie</h2>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Admin Dashboard</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/movies}">Movies</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Edit Movie</li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+      <span th:text="${successMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <span th:text="${errorMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="row">
+      <!-- Movie Poster Preview -->
+      <div class="col-md-4 mb-4">
+        <div class="card shadow-sm">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">Poster Preview</h5>
+          </div>
+          <div class="card-body text-center">
+            <img id="posterPreview"
+                 th:src="${movie.posterImageUrl != null ? movie.posterImageUrl : 'https://placehold.co/300x450?text=No+Poster'}"
+                 alt="Movie Poster" class="img-fluid rounded movie-poster-preview">
+
+            <div class="mt-3">
+              <p class="text-muted small">This is how the poster will appear on the website.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Movie Edit Form -->
+      <div class="col-md-8">
+        <div class="card shadow-sm">
+          <div class="card-header bg-white">
+            <h5 class="mb-0">Movie Information</h5>
+          </div>
+          <div class="card-body">
+            <form th:action="@{/admin/movies/{id}/edit(id=${movie.id})}" th:object="${movie}" method="post" class="row g-3">
+              <input type="hidden" th:field="*{id}" />
+
+              <!-- Movie Title -->
+              <div class="col-md-8">
+                <label for="title" class="form-label">Title</label>
+                <input type="text" class="form-control" id="title" th:field="*{title}" required
+                       th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+              </div>
+
+              <!-- Release Date -->
+              <div class="col-md-4">
+                <label for="releaseDate" class="form-label">Release Date</label>
+                <input type="date" class="form-control" id="releaseDate" th:field="*{releaseDate}"
+                       th:value="${movie.releaseDate != null ? #temporals.format(movie.releaseDate, 'yyyy-MM-dd') : ''}"
+                       th:classappend="${#fields.hasErrors('releaseDate')} ? 'is-invalid' : ''">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('releaseDate')}" th:errors="*{releaseDate}"></div>
+              </div>
+
+              <!-- Genre -->
+              <div class="col-md-4">
+                <label for="genre" class="form-label">Genre</label>
+                <select class="form-select" id="genre" th:field="*{genre}" required
+                        th:classappend="${#fields.hasErrors('genre')} ? 'is-invalid' : ''">
+                  <option value="">Select Genre</option>
+                  <option th:each="genreOpt : ${genres}"
+                          th:value="${genreOpt}"
+                          th:text="${genreOpt}"
+                          th:selected="${movie.genre == genreOpt}">
+                    Genre
+                  </option>
+                </select>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('genre')}" th:errors="*{genre}"></div>
+              </div>
+
+              <!-- Duration -->
+              <div class="col-md-4">
+                <label for="durationMinutes" class="form-label">Duration (minutes)</label>
+                <input type="number" class="form-control" id="durationMinutes" th:field="*{durationMinutes}" required
+                       th:classappend="${#fields.hasErrors('durationMinutes')} ? 'is-invalid' : ''">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('durationMinutes')}" th:errors="*{durationMinutes}"></div>
+              </div>
+
+              <!-- Rating -->
+              <div class="col-md-4">
+                <label for="rating" class="form-label">Rating</label>
+                <select class="form-select" id="rating" th:field="*{rating}"
+                        th:classappend="${#fields.hasErrors('rating')} ? 'is-invalid' : ''">
+                  <option value="">Select Rating</option>
+                  <option th:each="ratingOpt : ${ratings}"
+                          th:value="${ratingOpt}"
+                          th:text="${ratingOpt}"
+                          th:selected="${movie.rating == ratingOpt}">
+                    Rating
+                  </option>
+                </select>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('rating')}" th:errors="*{rating}"></div>
+              </div>
+
+              <!-- Director -->
+              <div class="col-md-6">
+                <label for="director" class="form-label">Director</label>
+                <input type="text" class="form-control" id="director" th:field="*{director}"
+                       th:classappend="${#fields.hasErrors('director')} ? 'is-invalid' : ''">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('director')}" th:errors="*{director}"></div>
+              </div>
+
+              <!-- Cast -->
+              <div class="col-md-6">
+                <label for="cast" class="form-label">Cast</label>
+                <input type="text" class="form-control" id="cast" th:field="*{cast}"
+                       th:classappend="${#fields.hasErrors('cast')} ? 'is-invalid' : ''">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('cast')}" th:errors="*{cast}"></div>
+                <div class="form-text">Separate names with commas</div>
+              </div>
+
+              <!-- Poster Image URL -->
+              <div class="col-md-6">
+                <label for="posterImageUrl" class="form-label">Poster Image URL</label>
+                <input type="url" class="form-control" id="posterImageUrl" th:field="*{posterImageUrl}"
+                       th:classappend="${#fields.hasErrors('posterImageUrl')} ? 'is-invalid' : ''"
+                       oninput="updatePosterPreview()">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('posterImageUrl')}" th:errors="*{posterImageUrl}"></div>
+              </div>
+
+              <!-- Trailer URL -->
+              <div class="col-md-6">
+                <label for="trailerUrl" class="form-label">Trailer URL</label>
+                <input type="url" class="form-control" id="trailerUrl" th:field="*{trailerUrl}"
+                       th:classappend="${#fields.hasErrors('trailerUrl')} ? 'is-invalid' : ''">
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('trailerUrl')}" th:errors="*{trailerUrl}"></div>
+              </div>
+
+              <!-- Description -->
+              <div class="col-12">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" th:field="*{description}" rows="4"
+                          th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"></textarea>
+                <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+              </div>
+
+              <!-- Form Buttons -->
+              <div class="col-12 mt-4">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a th:href="@{/admin/movies/{id}(id=${movie.id})}" class="btn btn-secondary ms-2">Cancel</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+
+<style>
+  .movie-poster-preview {
+    max-height: 350px;
+    object-fit: contain;
+  }
+</style>
+
+<script>
+  function updatePosterPreview() {
+    const posterUrl = document.getElementById('posterImageUrl').value;
+    const posterPreview = document.getElementById('posterPreview');
+
+    if (posterUrl && posterUrl.trim() !== '') {
+      posterPreview.src = posterUrl;
+    } else {
+      posterPreview.src = 'https://placehold.co/300x450?text=No+Poster';
+    }
+  }
+</script>
+</body>
+</html>

@@ -108,7 +108,7 @@
               <td th:text="${'$' + #numbers.formatDecimal(screening.basePrice, 1, 2)}">$10.00</td>
               <td>
                 <div class="btn-group" role="group">
-                  <a th:href="@{/screenings/{id}(id=${screening.id})}" class="btn btn-sm btn-outline-secondary" title="View">
+                  <a th:href="@{/admin/screenings/{id}(id=${screening.id})}" class="btn btn-sm btn-outline-secondary" title="View">
                     <i class="fas fa-eye"></i>
                   </a>
                   <a th:href="@{/admin/screenings/{id}/edit(id=${screening.id})}" class="btn btn-sm btn-outline-primary" title="Edit">

@@ -42,7 +42,7 @@ public class BookingController {
         
         List<BookingDTO> bookings = bookingService.getBookingsByUsername(username);
         model.addAttribute("bookings", bookings);
-        return "user/bookings";
+        return "booking/bookings";
     }
 
     @PreAuthorize("isAuthenticated()")

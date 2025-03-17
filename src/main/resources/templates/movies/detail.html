@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Movie Details')">
+  <title>Movie Details - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1">
+  <!-- Movie Hero Section -->
+  <section class="movie-hero position-relative overflow-hidden py-5">
+    <div class="bg-gradient-overlay position-absolute w-100 h-100"></div>
+
+    <div class="container py-4">
+      <div class="row align-items-center">
+        <div class="col-lg-8 content-column position-relative z-2">
+          <div class="mb-3 d-flex align-items-center">
+            <span class="badge bg-danger px-3 py-2 rounded-pill">NOW SHOWING</span>
+            <div class="ms-3 d-flex align-items-center">
+              <span class="badge bg-secondary me-2" th:text="${movie.rating}">PG-13</span>
+              <span class="badge bg-primary me-2" th:text="${movie.genre}">ACTION</span>
+              <span class="text-white"><i class="fas fa-clock me-1"></i><span th:text="${movie.durationMinutes + ' min'}">120 min</span></span>
+            </div>
+          </div>
+
+          <h1 class="display-4 fw-bold text-white hero-title mb-4" th:text="${movie.title}">Movie Title</h1>
+
+          <div class="text-light mb-4" th:text="${movie.description}">
+            Movie description goes here. This will be a longer text that provides details about the movie's plot,
+            characters, and other interesting aspects.
+          </div>
+
+          <div class="movie-meta text-light mb-4">
+            <div class="row">
+              <div class="col-md-6 mb-2">
+                <strong>Director:</strong> <span th:text="${movie.director ?: 'Not specified'}">Director Name</span>
+              </div>
+              <div class="col-md-6 mb-2">
+                <strong>Release Date:</strong> <span th:text="${#temporals.format(movie.releaseDate, 'MMMM d, yyyy')}">January 1, 2023</span>
+              </div>
+              <div class="col-md-6 mb-2">
+                <strong>Genre:</strong> <span th:text="${movie.genre}">Action</span>
+              </div>
+              <div class="col-md-6 mb-2">
+                <strong>Rating:</strong> <span th:text="${movie.rating}">PG-13</span>
+              </div>
+              <div class="col-12">
+                <strong>Cast:</strong> <span th:text="${movie.cast ?: 'Not specified'}">Actor 1, Actor 2, Actor 3</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex gap-3">
+            <a href="#screenings" class="btn btn-primary btn-lg px-4 py-3 rounded-pill fw-bold">
+              Book Tickets <i class="bi bi-arrow-right-short ms-2"></i>
+            </a>
+            <a th:if="${movie.trailerUrl}" th:href="${movie.trailerUrl}" target="_blank"
+               class="btn btn-outline-light btn-lg px-4 py-3 rounded-pill">
+              Watch Trailer <i class="bi bi-play-circle ms-2"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="col-lg-4 image-column position-relative z-1 mt-4 mt-lg-0">
+          <div class="image-container position-relative">
+            <img th:src="${movie.posterImageUrl != null ? movie.posterImageUrl : 'https://placehold.co/300x450?text=No+Poster'}"
+                 alt="Movie Poster" class="img-fluid main-image rounded-5 shadow-lg animate__animated animate__fadeIn">
+
+            <!-- Decorative elements -->
+            <div class="decoration-circle circle-1"></div>
+            <div class="decoration-circle circle-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screenings Section -->
+  <section id="screenings" class="py-5">
+    <div class="container">
+      <h2 class="section-title mb-4">Available Screenings</h2>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <ul class="nav nav-tabs" id="screeningsTabs" role="tablist">
+            <!-- Create tabs for each date with available screenings -->
+            <li class="nav-item" role="presentation" th:each="entry, iterStat : ${screeningsByDate}">
+              <button class="nav-link" th:class="${iterStat.first} ? 'nav-link active' : 'nav-link'"
+                      th:id="'day-' + ${iterStat.index} + '-tab'"
+                      data-bs-toggle="tab"
+                      th:data-bs-target="'#day-' + ${iterStat.index}"
+                      type="button" role="tab"
+                      th:aria-controls="'day-' + ${iterStat.index}"
+                      th:aria-selected="${iterStat.first}">
+                <span th:text="${#temporals.format(entry.key, 'EEE, MMM d')}">Fri, Jan 1</span>
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content pt-4" id="screeningsTabsContent">
+            <!-- Content for each date tab -->
+            <div class="tab-pane fade" th:each="entry, iterStat : ${screeningsByDate}"
+                 th:id="'day-' + ${iterStat.index}"
+                 th:class="${iterStat.first} ? 'tab-pane fade show active' : 'tab-pane fade'"
+                 role="tabpanel"
+                 th:aria-labelledby="'day-' + ${iterStat.index} + '-tab'">
+
+              <div class="mb-4" th:each="theatreScreenings : ${entry.value.stream().collect(T(java.util.stream.Collectors).groupingBy(s -> s.theatreId))}">
+                <!-- Get theatre name from first screening in the group -->
+                <h4 class="mb-3" th:text="${theatreScreenings.value[0].theatreName}">Theatre Name</h4>
+
+                <div class="screening-formats mb-4">
+                  <!-- Group by format -->
+                  <div class="mb-3" th:each="formatScreenings : ${theatreScreenings.value.stream().collect(T(java.util.stream.Collectors).groupingBy(s -> s.format))}">
+                    <h5 class="screening-format mb-2">
+                      <span class="badge" th:classappend="${formatScreenings.key.name() == 'STANDARD' ? 'bg-secondary' :
+                                                          (formatScreenings.key.name() == 'IMAX' ? 'bg-primary' :
+                                                          (formatScreenings.key.name() == 'THREE_D' ? 'bg-info' :
+                                                          (formatScreenings.key.name() == 'FOUR_D' ? 'bg-warning' :
+                                                          'bg-success')))}">
+                        <span th:text="${formatScreenings.key}">Format</span>
+                      </span>
+                    </h5>
+
+                    <div class="screening-times">
+                      <div class="d-flex flex-wrap gap-2">
+                        <a th:each="screening : ${formatScreenings.value}"
+                           th:href="@{/bookings/screening/{id}(id=${screening.id})}"
+                           class="screening-time-badge">
+                          <span class="badge bg-light text-dark border p-2 screening-time"
+                                th:text="${#temporals.format(screening.startTime, 'HH:mm')}">
+                            19:30
+                          </span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- No screenings message -->
+              <div th:if="${entry.value.empty}" class="text-center py-4">
+                <p class="text-muted">No screenings available for this date.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No screenings at all message -->
+      <div th:if="${screeningsByDate.empty}" class="card shadow-sm">
+        <div class="card-body text-center py-5">
+          <div class="empty-icon mb-3">
+            <i class="fas fa-calendar-times text-muted" style="font-size: 3rem;"></i>
+          </div>
+          <h4 class="mb-2">No Screenings Available</h4>
+          <p class="text-muted">There are currently no scheduled screenings for this movie.</p>
+          <a th:href="@{/movies}" class="btn btn-primary mt-2">Browse Other Movies</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+
+<style>
+  /* Movie Hero Section Styles */
+  .movie-hero {
+    background: linear-gradient(90deg, #1a1a2e 0%, #16213e 100%);
+    min-height: 600px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-gradient-overlay {
+    background: radial-gradient(circle, rgba(45,52,80,0.1) 0%, rgba(20,23,35,0.7) 100%);
+    z-index: 1;
+  }
+
+  .hero-title {
+    font-size: 3.5rem;
+    letter-spacing: -1px;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+
+  .content-column {
+    padding-right: 3rem;
+  }
+
+  .image-container {
+    position: relative;
+    z-index: 2;
+    padding: 2rem;
+  }
+
+  .main-image {
+    transform: perspective(1000px) rotateY(-10deg);
+    transition: transform 0.5s ease;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    border: 5px solid rgba(255,255,255,0.1);
+  }
+
+  .main-image:hover {
+    transform: perspective(1000px) rotateY(-5deg) translateY(-10px);
+  }
+
+  /* Decorative elements */
+  .decoration-circle {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.2;
+    filter: blur(40px);
+    z-index: -1;
+  }
+
+  .circle-1 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, #ff2c55 0%, #ff0040 100%);
+    top: -100px;
+    right: -50px;
+    animation: float 8s ease-in-out infinite;
+  }
+
+  .circle-2 {
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, #4890fe 0%, #2464eb 100%);
+    bottom: -50px;
+    left: 40px;
+    animation: float 6s ease-in-out infinite reverse;
+  }
+
+  /* Screening section styles */
+  .screening-time-badge {
+    transition: all 0.2s ease;
+    text-decoration: none;
+  }
+
+  .screening-time-badge:hover .screening-time {
+    background-color: #0d6efd !important;
+    color: white !important;
+    transform: scale(1.05);
+  }
+
+  .screening-time {
+    transition: all 0.2s ease;
+  }
+
+  /* Animation */
+  @keyframes float {
+    0% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-15px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
+  }
+</style>
+</body>
+</html>

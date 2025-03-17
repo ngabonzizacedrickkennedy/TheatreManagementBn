@@ -19,6 +19,8 @@ public class BookingDTO {
     private String userEmail;
     private Long screeningId;
     private String movieTitle;
+    private Long movieId;
+    private Long theatreId;
     private String movieUrl;
     private String theatreName;
     private LocalDateTime screeningTime;

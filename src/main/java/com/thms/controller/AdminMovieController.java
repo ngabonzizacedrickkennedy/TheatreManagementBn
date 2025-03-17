@@ -142,6 +142,6 @@ public class AdminMovieController {
         // You'll need to implement this method in your service
         // model.addAttribute("screenings", screeningService.getScreeningsByMovie(id));
         
-        return "admin/movies/";
+        return "admin/movies/theatre";
     }
 }

@@ -34,17 +34,43 @@
           <li class="nav-item">
             <a class="nav-link" th:href="@{/}">Home</a>
           </li>
-          <li class="nav-item">
+
+          <!-- Navigation for regular users -->
+          <li class="nav-item" sec:authorize="!hasAnyRole('ADMIN', 'MANAGER')">
             <a class="nav-link" th:href="@{/movies}">Movies</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" th:href="@{/theatres}">Theatres</a>
+          <li class="nav-item" sec:authorize="isAuthenticated() and !hasAnyRole('ADMIN', 'MANAGER')">
+            <a class="nav-link" th:href="@{/bookings}">My Bookings</a>
           </li>
+          <li class="nav-item" sec:authorize="!hasAnyRole('ADMIN', 'MANAGER')">
+            <a class="nav-link" th:href="@{/about}">About</a>
+          </li>
+          <li class="nav-item" sec:authorize="!hasAnyRole('ADMIN', 'MANAGER')">
+            <a class="nav-link" th:href="@{/contact}">Contact Us</a>
+          </li>
+
+          <!-- Navigation for admin and manager -->
+          <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'MANAGER')">
+            <a class="nav-link" th:href="@{/admin/users}">Users</a>
+          </li>
+          <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'MANAGER')">
+            <a class="nav-link" th:href="@{/admin/screenings}">Screenings</a>
+          </li>
+          <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'MANAGER')">
+            <a class="nav-link" th:href="@{/admin/movies}">Movies</a>
+          </li>
+          <li class="nav-item" sec:authorize="hasAnyRole('ADMIN', 'MANAGER')">
+            <a class="nav-link" th:href="@{/admin/theatres}">Theatres</a>
+          </li>
+
+          <!-- Admin Dashboard -->
           <li class="nav-item" sec:authorize="hasRole('ADMIN')">
-            <a class="nav-link" th:href="@{/admin/dashboard}">Admin</a>
+            <a class="nav-link" th:href="@{/admin/dashboard}">Dashboard</a>
           </li>
-          <li class="nav-item" sec:authorize="hasRole('MANAGER')">
-            <a class="nav-link" th:href="@{/templates/manager/dashboard}">Manager</a>
+
+          <!-- Manager Dashboard -->
+          <li class="nav-item" sec:authorize="hasRole('MANAGER') and !hasRole('ADMIN')">
+            <a class="nav-link" th:href="@{/manager/dashboard}">Dashboard</a>
           </li>
         </ul>
         <ul class="navbar-nav">
@@ -60,8 +86,8 @@
               <span sec:authentication="name">Username</span>
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" th:href="@{/templates/user/profile}">My Profile</a></li>
-              <li><a class="dropdown-item" th:href="@{/bookings}">My Bookings</a></li>
+              <li><a class="dropdown-item" th:href="@{/user/profile}">My Profile</a></li>
+              <li sec:authorize="!hasAnyRole('ADMIN', 'MANAGER')"><a class="dropdown-item" th:href="@{/bookings}">My Bookings</a></li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <form th:action="@{/auth/logout}" method="post">

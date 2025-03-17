@@ -83,6 +83,35 @@
       </div>
     </div>
 
+    <!-- Booking Status Stats -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Booking Statistics</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4 mb-3 mb-md-0">
+            <div class="text-center">
+              <h2 class="text-success" th:text="${completedBookings}">0</h2>
+              <p class="mb-0">Completed Bookings</p>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3 mb-md-0">
+            <div class="text-center">
+              <h2 class="text-warning" th:text="${pendingBookings}">0</h2>
+              <p class="mb-0">Pending Bookings</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="text-center">
+              <h2 class="text-danger" th:text="${cancelledBookings}">0</h2>
+              <p class="mb-0">Cancelled Bookings</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Quick Actions -->
     <div class="row mb-5">
       <div class="col-12">
@@ -108,8 +137,8 @@
                 </a>
               </div>
               <div class="col-md-3 mb-3">
-                <a th:href="@{/admin/reports}" class="btn btn-outline-primary w-100">
-                  <i class="fas fa-chart-bar me-2"></i>View Reports
+                <a th:href="@{/admin/bookings}" class="btn btn-outline-primary w-100">
+                  <i class="fas fa-ticket-alt me-2"></i>Manage Bookings
                 </a>
               </div>
             </div>
@@ -118,8 +147,9 @@
       </div>
     </div>
 
-    <!-- Recent Activity -->
+    <!-- Recent Activity Sections -->
     <div class="row">
+      <!-- Recent Bookings -->
       <div class="col-md-6 mb-4">
         <div class="card shadow-sm h-100">
           <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -128,36 +158,33 @@
           </div>
           <div class="card-body p-0">
             <div class="list-group list-group-flush">
-              <!-- Sample recent bookings - replace with actual data -->
-              <div class="list-group-item">
-                <div class="d-flex w-100 justify-content-between">
-                  <h6 class="mb-1">Booking #BK12345</h6>
-                  <small class="text-muted">3 mins ago</small>
-                </div>
-                <p class="mb-1">User: John Doe</p>
-                <small class="text-muted">Movie: Inception, Seats: A1, A2</small>
+              <!-- If no bookings exist -->
+              <div class="list-group-item text-center py-4" th:if="${recentBookings.empty}">
+                <p class="text-muted mb-0">No bookings available</p>
               </div>
-              <div class="list-group-item">
+
+              <!-- Display actual recent bookings -->
+              <div class="list-group-item" th:each="booking : ${recentBookings}" th:if="${!recentBookings.empty}">
                 <div class="d-flex w-100 justify-content-between">
-                  <h6 class="mb-1">Booking #BK12344</h6>
-                  <small class="text-muted">24 mins ago</small>
+                  <h6 class="mb-1">
+                    <a th:href="@{/admin/bookings/{id}(id=${booking.id})}" class="text-decoration-none" th:text="${'Booking #' + booking.bookingNumber}">
+                      Booking #BK12345
+                    </a>
+                  </h6>
+                  <small class="text-muted" th:text="${#temporals.format(booking.bookingTime, 'HH:mm')}">3 mins ago</small>
                 </div>
-                <p class="mb-1">User: Jane Smith</p>
-                <small class="text-muted">Movie: The Matrix, Seats: C4, C5</small>
-              </div>
-              <div class="list-group-item">
-                <div class="d-flex w-100 justify-content-between">
-                  <h6 class="mb-1">Booking #BK12343</h6>
-                  <small class="text-muted">1 hour ago</small>
-                </div>
-                <p class="mb-1">User: Mike Johnson</p>
-                <small class="text-muted">Movie: Avengers, Seats: B7, B8, B9</small>
+                <p class="mb-1">User: <span th:text="${booking.username}">John Doe</span></p>
+                <small class="text-muted">
+                  Movie: <span th:text="${booking.movieTitle}">Inception</span>,
+                  Seats: <span th:text="${#strings.arrayJoin(booking.bookedSeats, ', ')}">A1, A2</span>
+                </small>
               </div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- New Users -->
       <div class="col-md-6 mb-4">
         <div class="card shadow-sm h-100">
           <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -166,30 +193,23 @@
           </div>
           <div class="card-body p-0">
             <div class="list-group list-group-flush">
-              <!-- Sample new users - replace with actual data -->
-              <div class="list-group-item">
-                <div class="d-flex w-100 justify-content-between">
-                  <h6 class="mb-1">Alice Brown</h6>
-                  <small class="text-muted">1 hour ago</small>
-                </div>
-                <p class="mb-1">alice.brown@example.com</p>
-                <small class="text-muted">Role: User</small>
+              <!-- If no users exist -->
+              <div class="list-group-item text-center py-4" th:if="${newUsers.empty}">
+                <p class="text-muted mb-0">No users available</p>
               </div>
-              <div class="list-group-item">
+
+              <!-- Display actual new users -->
+              <div class="list-group-item" th:each="user : ${newUsers}" th:if="${!newUsers.empty}">
                 <div class="d-flex w-100 justify-content-between">
-                  <h6 class="mb-1">Robert Davis</h6>
-                  <small class="text-muted">3 hours ago</small>
+                  <h6 class="mb-1">
+                    <a th:href="@{/admin/users/{id}(id=${user.id})}" class="text-decoration-none" th:text="${user.firstName + ' ' + user.lastName}">
+                      User Name
+                    </a>
+                  </h6>
+                  <small class="text-muted">User ID: <span th:text="${user.id}">123</span></small>
                 </div>
-                <p class="mb-1">robert.davis@example.com</p>
-                <small class="text-muted">Role: User</small>
-              </div>
-              <div class="list-group-item">
-                <div class="d-flex w-100 justify-content-between">
-                  <h6 class="mb-1">Emily Wilson</h6>
-                  <small class="text-muted">5 hours ago</small>
-                </div>
-                <p class="mb-1">emily.wilson@example.com</p>
-                <small class="text-muted">Role: User</small>
+                <p class="mb-1" th:text="${user.email}">user@example.com</p>
+                <small class="text-muted">Role: <span th:text="${user.role}">User</span></small>
               </div>
             </div>
           </div>
@@ -200,5 +220,36 @@
 </main>
 
 <div th:replace="fragments/footer :: footer"></div>
+
+<style>
+  /* Dashboard Card Styles */
+  .dashboard-card {
+    text-align: center;
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+  }
+
+  .dashboard-card i {
+    font-size: 3rem;
+    margin-bottom: 10px;
+  }
+
+  .dashboard-card.users {
+    background: linear-gradient(45deg, #4e73df, #224abe);
+  }
+
+  .dashboard-card.movies {
+    background: linear-gradient(45deg, #1cc88a, #169969);
+  }
+
+  .dashboard-card.theatres {
+    background: linear-gradient(45deg, #36b9cc, #258391);
+  }
+
+  .dashboard-card.bookings {
+    background: linear-gradient(45deg, #f6c23e, #dda20a);
+  }
+</style>
 </body>
 </html>

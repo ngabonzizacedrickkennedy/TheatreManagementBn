@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('View Movie')">
+    <title>View Movie - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-film me-2"></i>Movie Details</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Admin Dashboard</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/admin/movies}">Movies</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">View Movie</li>
+                </ol>
+            </nav>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row">
+            <!-- Movie Poster -->
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <img th:src="${movie.posterImageUrl != null ? movie.posterImageUrl : 'https://placehold.co/300x450?text=No+Poster'}"
+                             alt="Movie Poster" class="img-fluid rounded movie-poster-large">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Movie Details -->
+            <div class="col-md-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Movie Information</h5>
+                        <div>
+                            <a th:href="@{/admin/movies/{id}/edit(id=${movie.id})}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-edit me-1"></i>Edit Movie
+                            </a>
+                            <a th:href="@{/admin/screenings/create(movieId=${movie.id})}" class="btn btn-sm btn-success ms-2">
+                                <i class="fas fa-calendar-plus me-1"></i>Add Screening
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3 th:text="${movie.title}">Movie Title</h3>
+
+                        <div class="mb-3">
+                            <span class="badge bg-primary me-2" th:text="${movie.genre}">Genre</span>
+                            <span class="badge bg-secondary me-2" th:text="${movie.rating}">Rating</span>
+                            <span class="badge bg-info text-dark" th:text="${movie.durationMinutes + ' min'}">Duration</span>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h6>Director</h6>
+                                <p th:text="${movie.director ?: 'Not specified'}">Director Name</p>
+                            </div>
+
+                            <div class="col-md-6">
+                                <h6>Release Date</h6>
+                                <p th:text="${movie.releaseDate != null ? #temporals.format(movie.releaseDate, 'MMMM d, yyyy') : 'Not specified'}">
+                                    January 1, 2023
+                                </p>
+                            </div>
+
+                            <div class="col-12">
+                                <h6>Cast</h6>
+                                <p th:text="${movie.cast ?: 'Not specified'}">Actor 1, Actor 2, Actor 3</p>
+                            </div>
+
+                            <div class="col-12">
+                                <h6>Description</h6>
+                                <p th:text="${movie.description ?: 'No description available.'}">
+                                    Movie description text goes here. This will be a longer text that provides details about the movie's plot,
+                                    characters, and other interesting information.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Trailer</h6>
+                                <p th:if="${movie.trailerUrl}">
+                                    <a th:href="${movie.trailerUrl}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-play-circle me-1"></i>Watch Trailer
+                                    </a>
+                                </p>
+                                <p th:unless="${movie.trailerUrl}" class="text-muted">No trailer available</p>
+                            </div>
+
+                            <div class="col-md-6">
+                                <h6>Actions</h6>
+                                <a th:href="@{/admin/movies/{id}/screenings(id=${movie.id})}" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-calendar-alt me-1"></i>View Screenings
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#deleteMovieModal">
+                                    <i class="fas fa-trash-alt me-1"></i>Delete Movie
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screenings Section -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Upcoming Screenings</h5>
+                        <a th:href="@{/admin/screenings/create(movieId=${movie.id})}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-plus-circle me-1"></i>Add Screening
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${screenings != null && !screenings.empty}">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                    <tr>
+                                        <th>Theatre</th>
+                                        <th>Screen</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Format</th>
+                                        <th>Price</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    <tr th:each="screening : ${screenings}">
+                                        <td th:text="${screening.theatreName}">Theatre Name</td>
+                                        <td th:text="${screening.screenNumber}">1</td>
+                                        <td th:text="${#temporals.format(screening.startTime, 'EEE, MMM d, yyyy')}">Mon, Jan 1, 2023</td>
+                                        <td th:text="${#temporals.format(screening.startTime, 'HH:mm')}">19:30</td>
+                                        <td>
+                                            <span class="badge bg-primary" th:text="${screening.format}">STANDARD</span>
+                                        </td>
+                                        <td th:text="${'$' + #numbers.formatDecimal(screening.basePrice, 1, 2)}">$10.00</td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a th:href="@{/admin/screenings/{id}/edit(id=${screening.id})}" class="btn btn-sm btn-outline-primary" title="Edit">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a th:href="@{/admin/screenings/{id}(id=${screening.id})}" class="btn btn-sm btn-outline-secondary" title="View">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div th:unless="${screenings != null && !screenings.empty}" class="text-center py-4">
+                            <div class="empty-state">
+                                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                                <h5>No Upcoming Screenings</h5>
+                                <p class="text-muted">There are currently no screenings scheduled for this movie.</p>
+                                <a th:href="@{/admin/screenings/create(movieId=${movie.id})}" class="btn btn-primary mt-2">
+                                    <i class="fas fa-plus-circle me-1"></i>Add Screening
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Delete Movie Confirmation Modal -->
+<div class="modal fade" id="deleteMovieModal" tabindex="-1" aria-labelledby="deleteMovieModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteMovieModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the movie <strong th:text="${movie.title}">Movie Title</strong>?</p>
+                <p class="text-danger">This will also delete all related screenings and bookings. This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form th:action="@{/admin/movies/{id}/delete(id=${movie.id})}" method="post">
+                    <button type="submit" class="btn btn-danger">Delete Movie</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="fragments/footer :: footer"></div>
+
+<style>
+    .movie-poster-large {
+        max-height: 450px;
+        object-fit: contain;
+    }
+
+    .empty-state {
+        padding: 2rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+</style>
+</body>
+</html>

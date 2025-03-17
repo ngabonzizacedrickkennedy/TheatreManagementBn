@@ -25,7 +25,7 @@ public class BookingService {
     private final SeatRepository seatRepository;
 
     public BookingService(BookingRepository bookingRepository, UserRepository userRepository,
-                         ScreeningRepository screeningRepository, SeatRepository seatRepository) {
+                          ScreeningRepository screeningRepository, SeatRepository seatRepository) {
         this.bookingRepository = bookingRepository;
         this.userRepository = userRepository;
         this.screeningRepository = screeningRepository;
@@ -93,7 +93,7 @@ public class BookingService {
     public List<BookingDTO> getBookingsByUsername(String username) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        
+
         return getBookingsByUser(user.getId());
     }
 
@@ -106,12 +106,12 @@ public class BookingService {
     public void cancelBooking(Long id) {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
-        
+
         // Check if the screening is in the future
         if (booking.getScreening().getStartTime().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Cannot cancel past bookings");
         }
-        
+
         booking.setPaymentStatus(Booking.PaymentStatus.CANCELLED);
         bookingRepository.save(booking);
     }
@@ -120,18 +120,18 @@ public class BookingService {
     public double calculateTotalPrice(Long screeningId, List<String> selectedSeats) {
         Screening screening = screeningRepository.findById(screeningId)
                 .orElseThrow(() -> new RuntimeException("Screening not found"));
-        
+
         double basePrice = screening.getBasePrice();
         double totalPrice = 0.0;
-        
+
         // Get all seats from this theatre and screen
         Map<String, Seat> seatMap = seatRepository.findByTheatreIdAndScreenNumber(
-                screening.getTheatre().getId(), screening.getScreenNumber()).stream()
+                        screening.getTheatre().getId(), screening.getScreenNumber()).stream()
                 .collect(Collectors.toMap(
-                    seat -> seat.getRowName() + seat.getSeatNumber(),
-                    seat -> seat
+                        seat -> seat.getRowName() + seat.getSeatNumber(),
+                        seat -> seat
                 ));
-        
+
         // Calculate price based on seat type
         for (String seatKey : selectedSeats) {
             Seat seat = seatMap.get(seatKey);
@@ -141,7 +141,7 @@ public class BookingService {
                 totalPrice += basePrice; // Default to base price if seat not found
             }
         }
-        
+
         return totalPrice;
     }
 
@@ -158,6 +158,8 @@ public class BookingService {
         dto.setUserEmail(booking.getUser().getEmail());
         dto.setScreeningId(booking.getScreening().getId());
         dto.setMovieTitle(booking.getScreening().getMovie().getTitle());
+        dto.setMovieId(booking.getScreening().getMovie().getId());
+        dto.setTheatreId(booking.getScreening().getTheatre().getId());
         dto.setMovieUrl(booking.getScreening().getMovie().getTrailerUrl());
         dto.setTheatreName(booking.getScreening().getTheatre().getName());
         dto.setScreeningTime(booking.getScreening().getStartTime());
@@ -168,10 +170,55 @@ public class BookingService {
         // Payment method isn't stored in the entity, so we don't set it here
         return dto;
     }
+
     @Transactional(readOnly = true)
     public List<BookingDTO> getBookingsByScreeningId(Long screeningId) {
         return bookingRepository.findByScreeningId(screeningId).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    // New methods for admin functionality
+
+    @Transactional(readOnly = true)
+    public List<BookingDTO> getBookingsByMovie(Long movieId) {
+        return bookingRepository.findByMovieId(movieId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingDTO> getBookingsByTheatre(Long theatreId) {
+        return bookingRepository.findByTheatreId(theatreId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingDTO> getBookingsByStatus(Booking.PaymentStatus status) {
+        return bookingRepository.findByPaymentStatus(status).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingDTO> getBookingsByDateRange(LocalDateTime fromDate, LocalDateTime toDate) {
+        return bookingRepository.findByBookingTimeBetween(fromDate, toDate).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void updateBookingStatus(Long id, Booking.PaymentStatus status) {
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found with id: " + id));
+
+        booking.setPaymentStatus(status);
+        bookingRepository.save(booking);
+    }
+
+    @Transactional
+    public void deleteBooking(Long id) {
+        bookingRepository.deleteById(id);
     }
 }

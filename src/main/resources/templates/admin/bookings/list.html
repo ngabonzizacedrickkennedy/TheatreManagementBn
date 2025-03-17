@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Manage Bookings')">
+  <title>Manage Bookings - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2><i class="fas fa-ticket-alt me-2"></i>Manage Bookings</h2>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Admin Dashboard</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Bookings</li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+      <span th:text="${successMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <span th:text="${errorMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Export Message -->
+    <div th:if="${exportMessage}" class="alert alert-info alert-dismissible fade show" role="alert">
+      <span th:text="${exportMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Search & Filters</h5>
+      </div>
+      <div class="card-body">
+        <!-- Booking Number Search -->
+        <form th:action="@{/admin/bookings}" method="get" class="mb-4">
+          <div class="input-group">
+            <input type="text" class="form-control" name="bookingNumber"
+                   placeholder="Search by booking number" th:value="${bookingNumber}">
+            <button class="btn btn-primary" type="submit">Search</button>
+          </div>
+        </form>
+
+        <!-- Advanced Filters -->
+        <div class="row g-3">
+          <!-- Filter by User -->
+          <div class="col-md-4">
+            <form th:action="@{/admin/bookings}" method="get">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h6 class="card-title">Filter by User</h6>
+                  <select class="form-select mb-2" name="userId">
+                    <option value="">Select User</option>
+                    <option th:each="user : ${users}"
+                            th:value="${user.id}"
+                            th:text="${user.username + ' (' + user.email + ')'}"
+                            th:selected="${selectedUserId != null && selectedUserId == user.id}">
+                      User Name
+                    </option>
+                  </select>
+                  <button type="submit" class="btn btn-sm btn-primary w-100">Apply</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Filter by Movie -->
+          <div class="col-md-4">
+            <form th:action="@{/admin/bookings}" method="get">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h6 class="card-title">Filter by Movie</h6>
+                  <select class="form-select mb-2" name="movieId">
+                    <option value="">Select Movie</option>
+                    <option th:each="movie : ${movies}"
+                            th:value="${movie.id}"
+                            th:text="${movie.title}"
+                            th:selected="${selectedMovieId != null && selectedMovieId == movie.id}">
+                      Movie Title
+                    </option>
+                  </select>
+                  <button type="submit" class="btn btn-sm btn-primary w-100">Apply</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Filter by Theatre -->
+          <div class="col-md-4">
+            <form th:action="@{/admin/bookings}" method="get">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h6 class="card-title">Filter by Theatre</h6>
+                  <select class="form-select mb-2" name="theatreId">
+                    <option value="">Select Theatre</option>
+                    <option th:each="theatre : ${theatres}"
+                            th:value="${theatre.id}"
+                            th:text="${theatre.name}"
+                            th:selected="${selectedTheatreId != null && selectedTheatreId == theatre.id}">
+                      Theatre Name
+                    </option>
+                  </select>
+                  <button type="submit" class="btn btn-sm btn-primary w-100">Apply</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Filter by Status -->
+          <div class="col-md-4">
+            <form th:action="@{/admin/bookings}" method="get">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h6 class="card-title">Filter by Status</h6>
+                  <select class="form-select mb-2" name="status">
+                    <option value="">Select Status</option>
+                    <option th:each="statusOption : ${statuses}"
+                            th:value="${statusOption}"
+                            th:text="${statusOption}"
+                            th:selected="${selectedStatus != null && selectedStatus == statusOption}">
+                      Status
+                    </option>
+                  </select>
+                  <button type="submit" class="btn btn-sm btn-primary w-100">Apply</button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Filter by Date Range -->
+          <div class="col-md-8">
+            <form th:action="@{/admin/bookings}" method="get">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h6 class="card-title">Filter by Date Range</h6>
+                  <div class="row mb-2">
+                    <div class="col">
+                      <label for="fromDate" class="form-label">From</label>
+                      <input type="datetime-local" class="form-control" id="fromDate" name="fromDate"
+                             th:value="${fromDate != null ? #temporals.format(fromDate, 'yyyy-MM-dd''T''HH:mm') : ''}">
+                    </div>
+                    <div class="col">
+                      <label for="toDate" class="form-label">To</label>
+                      <input type="datetime-local" class="form-control" id="toDate" name="toDate"
+                             th:value="${toDate != null ? #temporals.format(toDate, 'yyyy-MM-dd''T''HH:mm') : ''}">
+                    </div>
+                  </div>
+                  <button type="submit" class="btn btn-sm btn-primary w-100">Apply</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bookings Table -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Bookings</h5>
+        <div>
+          <a th:href="@{/admin/bookings/export}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-download me-1"></i>Export
+          </a>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Booking #</th>
+              <th scope="col">User</th>
+              <th scope="col">Movie</th>
+              <th scope="col">Theatre</th>
+              <th scope="col">Screening Time</th>
+              <th scope="col">Booking Time</th>
+              <th scope="col">Amount</th>
+              <th scope="col">Status</th>
+              <th scope="col">Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${bookings.empty}">
+              <td colspan="10" class="text-center">No bookings found</td>
+            </tr>
+            <tr th:each="booking : ${bookings}">
+              <td th:text="${booking.id}">1</td>
+              <td th:text="${booking.bookingNumber}">BK123456</td>
+              <td th:text="${booking.username}">johndoe</td>
+              <td th:text="${booking.movieTitle}">Movie Title</td>
+              <td th:text="${booking.theatreName}">Theatre Name</td>
+              <td th:text="${#temporals.format(booking.screeningTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 19:30</td>
+              <td th:text="${#temporals.format(booking.bookingTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 15:30</td>
+              <td th:text="${'$' + #numbers.formatDecimal(booking.totalAmount, 1, 2)}">$30.00</td>
+              <td>
+                <span class="badge rounded-pill"
+                      th:classappend="${booking.paymentStatus.name() == 'COMPLETED' ? 'bg-success' :
+                                      (booking.paymentStatus.name() == 'PENDING' ? 'bg-warning text-dark' :
+                                      (booking.paymentStatus.name() == 'CANCELLED' ? 'bg-danger' :
+                                       'bg-info'))}">
+                  <span th:text="${booking.paymentStatus}">Status</span>
+                </span>
+              </td>
+              <td>
+                <div class="btn-group" role="group">
+                  <a th:href="@{/admin/bookings/{id}(id=${booking.id})}" class="btn btn-sm btn-outline-primary" title="View">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <button type="button" class="btn btn-sm btn-outline-danger" title="Delete"
+                          data-bs-toggle="modal" th:data-bs-target="'#deleteModal' + ${booking.id}">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+
+                <!-- Delete Confirmation Modal -->
+                <div class="modal fade" th:id="'deleteModal' + ${booking.id}" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        Are you sure you want to delete the booking <strong th:text="${booking.bookingNumber}">BK123456</strong>?
+                        This action cannot be undone.
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form th:action="@{/admin/bookings/{id}/delete(id=${booking.id})}" method="post">
+                          <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer bg-white">
+        <a th:href="@{/admin/bookings}" class="btn btn-sm btn-outline-secondary">
+          <i class="fas fa-sync-alt me-1"></i>Reset Filters
+        </a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+</body>
+</html>
