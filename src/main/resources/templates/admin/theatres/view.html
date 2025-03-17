@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('View Theatre')">
+  <title>View Theatre - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2><i class="fas fa-building me-2"></i>Theatre Details</h2>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Admin Dashboard</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/theatres}">Theatres</a></li>
+          <li class="breadcrumb-item active" aria-current="page">View Theatre</li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- Theatre Info Card -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0" th:text="${theatre.name}">Theatre Name</h5>
+        <div>
+          <a th:href="@{/admin/theatres/{id}/edit(id=${theatre.id})}" class="btn btn-sm btn-primary">
+            <i class="fas fa-edit me-1"></i>Edit Theatre
+          </a>
+          <a th:href="@{/admin/theatres/{id}/seats(id=${theatre.id})}" class="btn btn-sm btn-info ms-2">
+            <i class="fas fa-chair me-1"></i>Manage Seats
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4 mb-4 mb-md-0">
+            <img th:src="${theatre.imageUrl != null ? theatre.imageUrl : 'https://placehold.co/400x300?text=No+Image'}"
+                 class="img-fluid rounded" alt="Theatre Image">
+          </div>
+          <div class="col-md-8">
+            <h4>About the Theatre</h4>
+            <p th:text="${theatre.description ?: 'No description available.'}">Theatre description</p>
+
+            <hr>
+
+            <div class="row">
+              <div class="col-md-6">
+                <h5>Contact Information</h5>
+                <p><i class="fas fa-map-marker-alt me-2"></i><span th:text="${theatre.address}">Theatre Address</span></p>
+                <p th:if="${theatre.phoneNumber}"><i class="fas fa-phone me-2"></i><span th:text="${theatre.phoneNumber}">Phone Number</span></p>
+                <p th:if="${theatre.email}"><i class="fas fa-envelope me-2"></i><span th:text="${theatre.email}">Email</span></p>
+              </div>
+              <div class="col-md-6">
+                <h5>Theatre Details</h5>
+                <p><i class="fas fa-tv me-2"></i><span th:text="${theatre.totalScreens + ' Screens'}">5 Screens</span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Quick Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 mb-3">
+            <a th:href="@{/admin/screenings/create?theatreId={id}(id=${theatre.id})}" class="btn btn-outline-primary w-100">
+              <i class="fas fa-calendar-plus me-2"></i>Add Screening
+            </a>
+          </div>
+          <div class="col-md-3 mb-3">
+            <a th:href="@{/admin/theatres/{id}/screenings(id=${theatre.id})}" class="btn btn-outline-primary w-100">
+              <i class="fas fa-calendar-alt me-2"></i>View Screenings
+            </a>
+          </div>
+          <div class="col-md-3 mb-3">
+            <a th:href="@{/admin/theatres/{id}/seats(id=${theatre.id})}" class="btn btn-outline-primary w-100">
+              <i class="fas fa-chair me-2"></i>Manage Seats
+            </a>
+          </div>
+          <div class="col-md-3 mb-3">
+            <button type="button" class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#deleteModal">
+              <i class="fas fa-trash-alt me-2"></i>Delete Theatre
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            Are you sure you want to delete the theatre <strong th:text="${theatre.name}">Theatre Name</strong>?
+            This will also delete all related screenings, seats, and bookings.
+            This action cannot be undone.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <form th:action="@{/admin/theatres/{id}/delete(id=${theatre.id})}" method="post">
+              <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+</body>
+</html>

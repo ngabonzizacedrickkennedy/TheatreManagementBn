@@ -167,4 +167,10 @@ public class BookingService {
         // Payment method isn't stored in the entity, so we don't set it here
         return dto;
     }
+    @Transactional(readOnly = true)
+    public List<BookingDTO> getBookingsByScreeningId(Long screeningId) {
+        return bookingRepository.findByScreeningId(screeningId).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 }

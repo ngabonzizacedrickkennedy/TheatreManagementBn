@@ -2,8 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
       lang="en">
-<head th:replace="fragments/header :: head('Manage Screenings')">
-  <title>Manage Screenings - Theatre Management System</title>
+<head th:replace="fragments/header :: head('Manage Theatres')">
+  <title>Manage Theatres - Theatre Management System</title>
 </head>
 <body class="d-flex flex-column min-vh-100">
 <div th:replace="fragments/header :: header"></div>
@@ -11,13 +11,12 @@
 <main class="flex-grow-1 py-5">
   <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2><i class="fas fa-calendar-alt me-2"></i>Manage Screenings</h2>
+      <h2><i class="fas fa-building me-2"></i>Manage Theatres</h2>
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-0">
           <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
           <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Admin Dashboard</a></li>
-          <li class="breadcrumb-item"><a th:href="@{/admin/theatres}">Theatres</a></li>
-          <li class="breadcrumb-item active" aria-current="page">Screenings</li>
+          <li class="breadcrumb-item active" aria-current="page">Theatres</li>
         </ol>
       </nav>
     </div>
@@ -36,50 +35,35 @@
     <!-- Search and Filters -->
     <div class="card shadow-sm mb-4">
       <div class="card-body">
-        <form th:action="@{/admin/screenings}" method="get" class="row g-3">
-          <input type="hidden" name="theatreId" th:value="${theatre.id}" />
-
+        <form th:action="@{/admin/theatres}" method="get" class="row g-3">
+          <div class="col-md-6">
+            <label for="search" class="form-label">Search</label>
+            <input type="text" class="form-control" id="search" name="search" placeholder="Search by name or address">
+          </div>
           <div class="col-md-4">
-            <label for="movie" class="form-label">Movie</label>
-            <select class="form-select" id="movie" name="movieId">
-              <option value="">All Movies</option>
-              <option th:each="movie : ${movies}"
-                      th:value="${movie.id}"
-                      th:text="${movie.title}">Movie Title</option>
+            <label for="sortBy" class="form-label">Sort By</label>
+            <select class="form-select" id="sortBy" name="sortBy">
+              <option value="id">ID</option>
+              <option value="name">Name</option>
+              <option value="address">Address</option>
             </select>
           </div>
-          <div class="col-md-4">
-            <label for="date" class="form-label">Date</label>
-            <input type="date" class="form-control" id="date" name="date">
-          </div>
-          <div class="col-md-4 d-flex align-items-end">
+          <div class="col-md-2 d-flex align-items-end">
             <button type="submit" class="btn btn-primary w-100">Filter</button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- Theatre Info -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-body">
-        <div class="row align-items-center">
-          <div class="col-md-6">
-            <h5 class="mb-1" th:text="${theatre.name}">Theatre Name</h5>
-            <p class="mb-0 text-muted" th:text="${theatre.address}">Theatre Address</p>
-          </div>
-          <div class="col-md-6 text-md-end">
-            <a th:href="@{/admin/screenings/create(theatreId=${theatre.id})}" class="btn btn-primary">
-              <i class="fas fa-plus-circle me-1"></i>Add New Screening
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Screenings Table -->
+    <!-- Theatres Table -->
     <div class="card shadow-sm">
       <div class="card-header bg-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Screenings</h5>
+        <h5 class="mb-0">Theatres</h5>
+        <div>
+          <a th:href="@{/admin/theatres/create}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus-circle me-1"></i>Add New Theatre
+          </a>
+        </div>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -87,48 +71,54 @@
             <thead class="table-light">
             <tr>
               <th scope="col">ID</th>
-              <th scope="col">Movie</th>
-              <th scope="col">Screen</th>
-              <th scope="col">Start Time</th>
-              <th scope="col">End Time</th>
-              <th scope="col">Format</th>
-              <th scope="col">Price</th>
+              <th scope="col">Image</th>
+              <th scope="col">Name</th>
+              <th scope="col">Address</th>
+              <th scope="col">Screens</th>
+              <th scope="col">Contact</th>
               <th scope="col">Actions</th>
             </tr>
             </thead>
             <tbody>
-            <tr th:if="${screenings.empty}">
-              <td colspan="8" class="text-center">No screenings found</td>
+            <tr th:if="${theatres.empty}">
+              <td colspan="7" class="text-center">No theatres found</td>
             </tr>
-            <tr th:each="screening : ${screenings}">
-              <td th:text="${screening.id}">1</td>
-              <td th:text="${screening.movieTitle}">Movie Title</td>
-              <td th:text="${screening.screenNumber}">1</td>
-              <td th:text="${#temporals.format(screening.startTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 19:30</td>
-              <td th:text="${#temporals.format(screening.endTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 21:30</td>
+            <tr th:each="theatre : ${theatres}">
+              <td th:text="${theatre.id}">1</td>
               <td>
-                <span class="badge bg-primary" th:text="${screening.format}">STANDARD</span>
+                <img th:src="${theatre.imageUrl != null ? theatre.imageUrl : 'https://placehold.co/60x60?text=Theatre'}"
+                     width="60" height="60" alt="Theatre Image" class="img-thumbnail">
               </td>
-              <td th:text="${'$' + #numbers.formatDecimal(screening.basePrice, 1, 2)}">$10.00</td>
+              <td th:text="${theatre.name}">AMC Theatre</td>
+              <td th:text="${theatre.address}">123 Main St, City</td>
+              <td th:text="${theatre.totalScreens}">8</td>
+              <td>
+                <div th:if="${theatre.phoneNumber != null}">
+                  <i class="fas fa-phone me-1"></i><span th:text="${theatre.phoneNumber}">123-456-7890</span>
+                </div>
+                <div th:if="${theatre.email != null}">
+                  <i class="fas fa-envelope me-1"></i><span th:text="${theatre.email}">email@theatre.com</span>
+                </div>
+              </td>
               <td>
                 <div class="btn-group" role="group">
-                  <a th:href="@{/screenings/{id}(id=${screening.id})}" class="btn btn-sm btn-outline-secondary" title="View">
+                  <a th:href="@{/theatres/{id}(id=${theatre.id})}" class="btn btn-sm btn-outline-secondary" title="View">
                     <i class="fas fa-eye"></i>
                   </a>
-                  <a th:href="@{/admin/screenings/{id}/edit(id=${screening.id})}" class="btn btn-sm btn-outline-primary" title="Edit">
+                  <a th:href="@{/admin/theatres/{id}/edit(id=${theatre.id})}" class="btn btn-sm btn-outline-primary" title="Edit">
                     <i class="fas fa-edit"></i>
                   </a>
-                  <a th:href="@{/admin/screenings/{id}/bookings(id=${screening.id})}" class="btn btn-sm btn-outline-info" title="View Bookings">
-                    <i class="fas fa-ticket-alt"></i>
+                  <a th:href="@{/admin/theatres/{id}/seats(id=${theatre.id})}" class="btn btn-sm btn-outline-info" title="Manage Seats">
+                    <i class="fas fa-chair"></i>
                   </a>
                   <button type="button" class="btn btn-sm btn-outline-danger" title="Delete"
-                          data-bs-toggle="modal" th:data-bs-target="'#deleteModal' + ${screening.id}">
+                          data-bs-toggle="modal" th:data-bs-target="'#deleteModal' + ${theatre.id}">
                     <i class="fas fa-trash-alt"></i>
                   </button>
                 </div>
 
                 <!-- Delete Confirmation Modal -->
-                <div class="modal fade" th:id="'deleteModal' + ${screening.id}" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                <div class="modal fade" th:id="'deleteModal' + ${theatre.id}" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
                   <div class="modal-dialog">
                     <div class="modal-content">
                       <div class="modal-header">
@@ -136,15 +126,13 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                       </div>
                       <div class="modal-body">
-                        Are you sure you want to delete the screening of
-                        <strong th:text="${screening.movieTitle}">Movie Title</strong> at
-                        <strong th:text="${#temporals.format(screening.startTime, 'MMM dd, yyyy HH:mm')}">Jan 01, 2023 19:30</strong>?
-
-                        <p class="text-danger mt-2">This will also delete all related bookings. This action cannot be undone.</p>
+                        Are you sure you want to delete the theatre <strong th:text="${theatre.name}">Theatre Name</strong>?
+                        This will also delete all related screenings, seats, and bookings.
+                        This action cannot be undone.
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <form th:action="@{/admin/screenings/{id}/delete(id=${screening.id})}" method="post">
+                        <form th:action="@{/admin/theatres/{id}/delete(id=${theatre.id})}" method="post">
                           <button type="submit" class="btn btn-danger">Delete</button>
                         </form>
                       </div>

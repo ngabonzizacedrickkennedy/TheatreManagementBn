@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6"
+      lang="en">
+<head th:replace="fragments/header :: head('Manage Theatre Seats')">
+  <title>Manage Theatre Seats - Theatre Management System</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+<div th:replace="fragments/header :: header"></div>
+
+<main class="flex-grow-1 py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h2><i class="fas fa-chair me-2"></i>Manage Theatre Seats</h2>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item"><a th:href="@{/}">Home</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Admin Dashboard</a></li>
+          <li class="breadcrumb-item"><a th:href="@{/admin/theatres}">Theatres</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Manage Seats</li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- Alert Messages -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+      <span th:text="${successMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+      <span th:text="${errorMessage}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Theatre Info -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <div class="row align-items-center">
+          <div class="col-md-6">
+            <h5 class="mb-1" th:text="${theatre.name}">Theatre Name</h5>
+            <p class="mb-0 text-muted" th:text="${theatre.address}">Theatre Address</p>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <h6 class="mb-0">Total Screens: <span th:text="${theatre.totalScreens}">5</span></h6>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <ul class="nav nav-tabs mb-4" id="screenTabs" role="tablist">
+      <li class="nav-item" role="presentation" th:each="i : ${#numbers.sequence(1, theatre.totalScreens)}">
+        <button class="nav-link" th:class="${i == 1} ? 'nav-link active' : 'nav-link'"
+                th:id="screen-tab-${i}" data-bs-toggle="tab"
+                th:data-bs-target="'#screen-' + ${i}" type="button" role="tab"
+                th:aria-controls="'screen-' + ${i}" th:aria-selected="${i == 1}">
+          Screen <span th:text="${i}">1</span>
+        </button>
+      </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="screenTabsContent">
+      <div class="tab-pane fade" th:each="i : ${#numbers.sequence(1, theatre.totalScreens)}"
+           th:class="${i == 1} ? 'tab-pane fade show active' : 'tab-pane fade'"
+           th:id="'screen-' + ${i}" role="tabpanel" th:aria-labelledby="'screen-tab-' + ${i}">
+
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Screen <span th:text="${i}">1</span> Seat Configuration</h5>
+            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" th:data-bs-target="'#initializeSeatsModal' + ${i}">
+              <i class="fas fa-sync-alt me-1"></i>Initialize Seats
+            </button>
+          </div>
+          <div class="card-body">
+            <!-- If no seats exist yet -->
+            <div th:if="${#vars['seatsScreen' + i] == null || #vars['seatsScreen' + i].empty}" class="text-center py-5">
+              <div class="mb-3">
+                <i class="fas fa-chair fa-3x text-muted"></i>
+              </div>
+              <h5>No seats configured for this screen yet</h5>
+              <p class="text-muted">Click "Initialize Seats" to set up the seating layout.</p>
+            </div>
+
+            <!-- If seats exist -->
+            <div th:if="${#vars['seatsScreen' + i] != null && !#vars['seatsScreen' + i].empty}">
+              <!-- Screen visualization -->
+              <div class="seat-container">
+                <div class="screen mb-4">SCREEN</div>
+
+                <!-- Group seats by row -->
+                <div th:each="row : ${#vars['seatsScreen' + i].stream().map(seat -> seat.rowName).distinct().sorted().toList()}" class="seat-row mb-2">
+                  <div class="row-name" th:text="${row}">A</div>
+
+                  <!-- Seats in this row -->
+                  <div th:each="seat : ${#vars['seatsScreen' + i].stream().filter(s -> s.rowName == row).sorted((s1, s2) -> s1.seatNumber.compareTo(s2.seatNumber)).toList()}"
+                       class="seat" th:classappend="${seat.seatType.name()}">
+                    <span th:text="${seat.seatNumber}">1</span>
+                  </div>
+                </div>
+
+                <!-- Seat type legend -->
+                <div class="seat-legend mt-4">
+                  <div class="legend-item">
+                    <div class="legend-seat bg-secondary"></div>
+                    <span>Standard</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-seat bg-warning"></div>
+                    <span>Premium</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-seat bg-primary"></div>
+                    <span>VIP</span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-seat bg-success"></div>
+                    <span>Accessible</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Initialize Seats Modal -->
+        <div class="modal fade" th:id="'initializeSeatsModal' + ${i}" tabindex="-1"
+             th:aria-labelledby="'initializeSeatsModalLabel' + ${i}" aria-hidden="true">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" th:id="'initializeSeatsModalLabel' + ${i}">
+                  Initialize Seats for Screen <span th:text="${i}">1</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form th:action="@{/admin/theatres/{id}/seats/initialize(id=${theatre.id})}" method="post">
+                  <input type="hidden" name="screenNumber" th:value="${i}" />
+
+                  <div class="mb-3">
+                    <label for="rows" class="form-label">Number of Rows</label>
+                    <input type="number" class="form-control" id="rows" name="rows" min="1" max="26" value="10" required>
+                    <div class="form-text">Maximum 26 rows (A-Z)</div>
+                  </div>
+
+                  <div class="mb-3">
+                    <label for="seatsPerRow" class="form-label">Seats Per Row</label>
+                    <input type="number" class="form-control" id="seatsPerRow" name="seatsPerRow" min="1" max="30" value="15" required>
+                  </div>
+
+                  <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This will replace any existing seats for this screen.
+                    This action cannot be undone.
+                  </div>
+
+                  <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">Initialize Seats</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div th:replace="fragments/footer :: footer"></div>
+</body>
+</html>
