@@ -33,9 +33,14 @@ public class HomeController {
         this.movieService = movieService;
         this.screeningService = screeningService;
     }
+    @GetMapping("/home")
+    public String welcomePage() {
+        return "welcome";  // This will render the welcome.html template
+    }
 
     @GetMapping("/")
     public String home(Model model, @AuthenticationPrincipal UserDetails userDetails) {
+
         // Get upcoming screenings (today and future)
         Set<String> roles = AuthorityUtils.authorityListToSet(userDetails.getAuthorities());
         if (roles.contains("ROLE_ADMIN") || roles.contains("ROLE_MANAGER")) {

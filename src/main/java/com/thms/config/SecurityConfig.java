@@ -48,7 +48,7 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 // Public resources
-                .requestMatchers("/", "/home", "/about", "/contact", "/auth/**", "/css/**", "/static/js/**", "/images/**").permitAll()
+                .requestMatchers( "/home", "/about", "/contact", "/auth/**", "/css/**", "/static/js/**", "/images/**").permitAll()
                 // H2 console access
                 .requestMatchers("/h2-console/**").permitAll()
                 // Admin access
@@ -70,7 +70,8 @@ public class SecurityConfig {
             )
             .logout(logout -> logout
                 .logoutRequestMatcher(new AntPathRequestMatcher("/auth/logout"))
-                .logoutSuccessUrl("/auth/login?logout=true")
+//                .logoutSuccessUrl("/auth/login?logout=true")
+                .logoutSuccessUrl("/home")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID")
                 .permitAll()
