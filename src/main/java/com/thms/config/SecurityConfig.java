@@ -1,21 +1,23 @@
 package com.thms.config;
 
+import com.thms.security.JwtAuthenticationFilter;
+import com.thms.security.JwtAuthEntryPoint;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-
-import lombok.RequiredArgsConstructor;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -24,6 +26,8 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final UserDetailsService userDetailsService;
+    private final JwtAuthEntryPoint jwtAuthEntryPoint;
+    private final JwtAuthenticationFilter jwtAuthFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -46,49 +50,41 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .authorizeHttpRequests(auth -> auth
-                // Public resources
-                .requestMatchers( "/home", "/about", "/contact", "/auth/**", "/css/**", "/static/js/**", "/images/**").permitAll()
-                // H2 console access
-                .requestMatchers("/h2-console/**").permitAll()
-                // Admin access
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                // Manager access
-                .requestMatchers("/manager/**").hasAnyRole("ADMIN", "MANAGER")
-                // User access
-                .requestMatchers("/user/**").hasAnyRole("ADMIN", "MANAGER", "USER")
-                // Require authentication for all other requests
-                .anyRequest().authenticated()
-            )
-            .formLogin(form -> form
-                .loginPage("/auth/login")
-                .loginProcessingUrl("/auth/login")
-                .defaultSuccessUrl("/", true)
-                .successHandler(authenticationSuccessHandler())
-                .failureUrl("/auth/login?error=true")
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutRequestMatcher(new AntPathRequestMatcher("/auth/logout"))
-//                .logoutSuccessUrl("/auth/login?logout=true")
-                .logoutSuccessUrl("/home")
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
-                .permitAll()
-            )
+            // Disable CSRF as we're using JWT
+            .csrf(csrf -> csrf.disable())
+            
+            // Exception handling
             .exceptionHandling(exception -> exception
-                .accessDeniedPage("/error/403")
+                .authenticationEntryPoint(jwtAuthEntryPoint))
+            
+            // Session management - stateless for REST API
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            
+            // Request authorization
+            .authorizeHttpRequests(auth -> auth
+                // Public API endpoints
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/v3/api-docs/**","/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/screenings/**").permitAll()
+                
+                // Admin API endpoints
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                
+                // Manager API endpoints
+                .requestMatchers("/api/manager/**").hasAnyRole("ADMIN", "MANAGER")
+                
+                // User API endpoints
+                .requestMatchers("/api/bookings/**").hasAnyRole("USER", "ADMIN", "MANAGER")
+                
+                // All other requests need authentication
+                .anyRequest().authenticated()
             );
-
-        // For H2 Console to work correctly
-        http.csrf(csrf -> csrf
-            .ignoringRequestMatchers(new AntPathRequestMatcher("/h2-console/**")));
-        http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
-
+            
+        // Add JWT filter before UsernamePasswordAuthenticationFilter
+        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        
         return http.build();
-    }
-    @Bean
-    public AuthenticationSuccessHandler authenticationSuccessHandler() {
-        return new CustomAuthSuccessHandler();
     }
 }
