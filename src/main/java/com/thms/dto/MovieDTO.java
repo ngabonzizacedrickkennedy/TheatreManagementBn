@@ -38,10 +38,10 @@ public class MovieDTO {
 
     private LocalDate releaseDate;
 
-    @Size(max = 255, message = "Poster URL cannot exceed 255 characters")
+//    @Size(max = 255, message = "Poster URL cannot exceed 255 characters")
     private String posterImageUrl;
 
-    @Size(max = 255, message = "Trailer URL cannot exceed 255 characters")
+//    @Size(max = 255, message = "Trailer URL cannot exceed 255 characters")
     private String trailerUrl;
 
     private Movie.Rating rating;

@@ -44,10 +44,10 @@ public class Movie {
 
     private LocalDate releaseDate;
 
-    @Size(max = 255)
+    @Lob
     private String posterImageUrl;
 
-    @Size(max = 255)
+    @Lob
     private String trailerUrl;
 
     @Enumerated(EnumType.STRING)

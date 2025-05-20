@@ -33,6 +33,6 @@ public class TheatreDTO {
     @PositiveOrZero(message = "Total screens must be a positive number")
     private Integer totalScreens;
 
-    @Size(max = 255, message = "Image URL cannot exceed 255 characters")
+//    @Size(max = 255, message = "Image URL cannot exceed 255 characters")
     private String imageUrl;
 }

@@ -41,7 +41,7 @@ public class Theatre {
     @PositiveOrZero
     private Integer totalScreens;
 
-    @Size(max = 255)
+    @Lob
     private String imageUrl;
 
     @OneToMany(mappedBy = "theatre", cascade = CascadeType.ALL)
