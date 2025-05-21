@@ -44,10 +44,10 @@ public class Movie {
 
     private LocalDate releaseDate;
 
-    @Lob
+    @Column(name = "poster_image_url", columnDefinition = "TEXT")
     private String posterImageUrl;
 
-    @Lob
+    @Column(name = "trailer_url", columnDefinition = "TEXT")
     private String trailerUrl;
 
     @Enumerated(EnumType.STRING)

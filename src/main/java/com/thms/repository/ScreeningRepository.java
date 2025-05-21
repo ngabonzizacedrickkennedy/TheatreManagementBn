@@ -25,4 +25,20 @@ public interface ScreeningRepository extends JpaRepository<Screening, Long> {
     Long countBookingsByScreeningId(Long screeningId);
 
     List<Screening> findByStartTimeAfterOrderByStartTimeAsc(LocalDateTime startTime);
+    /**
+     * Find screenings by start time between ordered by start time
+     */
+    List<Screening> findByStartTimeBetweenOrderByStartTimeAsc(LocalDateTime startTime, LocalDateTime endTime);
+
+    List<Screening> findByStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+
+    List<Screening> findByTheatreIdAndStartTimeAfter(Long theatreId, LocalDateTime startTime);
+
+    List<Screening> findByTheatreIdAndStartTimeBetween(Long theatreId, LocalDateTime starTime, LocalDateTime endTime);
+
+    List<Screening> findByMovieIdAndStartTimeBetween(Long movieId, LocalDateTime startTime, LocalDateTime endTime);
+
+    List<Screening> findByMovieIdAndTheatreIdAndStartTimeBetween(Long movieId, Long theatreId, LocalDateTime startTime, LocalDateTime endTime);
+
+    List<Screening> findByStartTimeAfter(LocalDateTime starTime);
 }

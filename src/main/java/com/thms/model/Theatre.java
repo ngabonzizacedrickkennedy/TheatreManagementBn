@@ -41,7 +41,7 @@ public class Theatre {
     @PositiveOrZero
     private Integer totalScreens;
 
-    @Lob
+    @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;
 
     @OneToMany(mappedBy = "theatre", cascade = CascadeType.ALL)

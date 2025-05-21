@@ -1,31 +1,38 @@
 package com.thms.service;
 
 import com.thms.dto.ScreeningDTO;
+import com.thms.exception.ResourceNotFoundException;
+import com.thms.model.Booking;
 import com.thms.model.Movie;
 import com.thms.model.Screening;
 import com.thms.model.Theatre;
+import com.thms.repository.BookingRepository;
 import com.thms.repository.MovieRepository;
 import com.thms.repository.ScreeningRepository;
 import com.thms.repository.TheatreRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class ScreeningService {
+public class ScreeningService implements IScreeningService {
 
     private final ScreeningRepository screeningRepository;
+    private final BookingRepository bookingRepository;
     private final MovieRepository movieRepository;
     private final TheatreRepository theatreRepository;
 
     public ScreeningService(ScreeningRepository screeningRepository,
-                            MovieRepository movieRepository,
+                            BookingRepository bookingRepository, MovieRepository movieRepository,
                             TheatreRepository theatreRepository) {
         this.screeningRepository = screeningRepository;
+        this.bookingRepository = bookingRepository;
         this.movieRepository = movieRepository;
         this.theatreRepository = theatreRepository;
     }
@@ -73,9 +80,244 @@ public class ScreeningService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<ScreeningDTO> getScreenings(Long movieId, Long theatreId, LocalDate date) {
+        List<Screening> screenings;
+
+        if (movieId != null && theatreId != null && date != null) {
+            // Filter by movie, theatre and date
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+            screenings = screeningRepository.findByMovieIdAndTheatreIdAndStartTimeBetween(
+                    movieId, theatreId, startOfDay, endOfDay);
+        } else if (movieId != null && theatreId != null) {
+            // Filter by movie and theatre
+            screenings = screeningRepository.findByMovieIdAndTheatreId(movieId, theatreId);
+        } else if (movieId != null && date != null) {
+            // Filter by movie and date
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+            screenings = screeningRepository.findByMovieIdAndStartTimeBetween(
+                    movieId, startOfDay, endOfDay);
+        } else if (theatreId != null && date != null) {
+            // Filter by theatre and date
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+            screenings = screeningRepository.findByTheatreIdAndStartTimeBetween(
+                    theatreId, startOfDay, endOfDay);
+        } else if (movieId != null) {
+            // Filter by movie
+            screenings = screeningRepository.findByMovieId(movieId);
+        } else if (theatreId != null) {
+            // Filter by theatre
+            screenings = screeningRepository.findByTheatreId(theatreId);
+        } else if (date != null) {
+            // Filter by date
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+            screenings = screeningRepository.findByStartTimeBetween(startOfDay, endOfDay);
+        } else {
+            // No filters, return all future screenings
+            screenings = screeningRepository.findByStartTimeAfter(LocalDateTime.now());
+        }
+
+        return screenings.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
     @Transactional(readOnly = true)
     public Optional<ScreeningDTO> getScreeningById(Long id) {
         return screeningRepository.findById(id).map(this::convertToDTO);
+    }
+
+    @Override
+    public List<ScreeningDTO> getScreeningsByMovie(Long movieId, Integer days) {
+        Movie movie = movieRepository.findById(movieId)
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found with id: " + movieId));
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime endDate = now.plusDays(days);
+
+        List<Screening> screenings = screeningRepository.findByMovieIdAndStartTimeBetween(
+                movieId, now, endDate);
+
+        return screenings.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ScreeningDTO> getScreeningsByTheatre(Long theatreId, LocalDate date) {
+        Theatre theatre = theatreRepository.findById(theatreId)
+                .orElseThrow(() -> new ResourceNotFoundException("Theatre not found with id: " + theatreId));
+
+        List<Screening> screenings;
+
+        if (date != null) {
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+
+            screenings = screeningRepository.findByTheatreIdAndStartTimeBetween(
+                    theatreId, startOfDay, endOfDay);
+        } else {
+            // If no date specified, return upcoming screenings for this theatre
+            LocalDateTime now = LocalDateTime.now();
+            screenings = screeningRepository.findByTheatreIdAndStartTimeAfter(theatreId, now);
+        }
+
+        return screenings.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, List<ScreeningDTO>> getUpcomingScreenings(Integer days) {
+        // Get current date and time
+        LocalDateTime now = LocalDateTime.now();
+
+        // Calculate end date (now + days)
+        LocalDateTime endDate = now.plusDays(days);
+
+        // Find all screenings between now and end date
+        List<Screening> screenings = screeningRepository.findByStartTimeBetweenOrderByStartTimeAsc(now, endDate);
+
+        // Convert to DTOs
+        List<ScreeningDTO> screeningDTOs = screenings.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        // Group screenings by date
+        Map<String, List<ScreeningDTO>> screeningsByDate = new HashMap<>();
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        for (ScreeningDTO screening : screeningDTOs) {
+            String dateKey = screening.getStartTime().format(dateFormatter);
+
+            if (!screeningsByDate.containsKey(dateKey)) {
+                screeningsByDate.put(dateKey, new ArrayList<>());
+            }
+
+            screeningsByDate.get(dateKey).add(screening);
+        }
+
+        return screeningsByDate;
+    }
+
+    @Override
+    public List<ScreeningDTO> getScreeningsByDateRange(LocalDate startDate, LocalDate endDate) {
+        LocalDateTime startDateTime = startDate.atStartOfDay();
+        LocalDateTime endDateTime = endDate.atTime(LocalTime.MAX);
+
+        List<Screening> screenings = screeningRepository.findByStartTimeBetween(startDateTime, endDateTime);
+
+        return screenings.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Set<String> getAvailableSeats(Long screeningId) {
+        // Get all seats for the theatre's screen
+        Screening screening = screeningRepository.findById(screeningId)
+                .orElseThrow(() -> new ResourceNotFoundException("Screening not found with id: " + screeningId));
+
+        // This would need actual implementation based on your data model
+        // For now, returning a dummy implementation
+
+        // Get all possible seats (e.g., A1-J10 for a 10x10 theatre)
+        Set<String> allSeats = generateAllSeatsForScreen(screening);
+
+        // Get booked seats
+        Set<String> bookedSeats = getBookedSeats(screeningId);
+
+        // Remove booked seats from all seats to get available seats
+        allSeats.removeAll(bookedSeats);
+
+        return allSeats;
+    }
+
+    @Override
+    public Set<String> getBookedSeats(Long screeningId) {
+        // Find all bookings for this screening
+        List<Booking> bookings = bookingRepository.findByScreeningId(screeningId);
+
+        // Collect all booked seats
+        return bookings.stream()
+                .filter(booking -> booking.getPaymentStatus() != Booking.PaymentStatus.CANCELLED)
+                .flatMap(booking -> booking.getBookedSeats().stream())
+                .collect(Collectors.toSet());
+    }
+
+    @Override
+    public Object getSeatingLayout(Long screeningId) {
+        Screening screening = screeningRepository.findById(screeningId)
+                .orElseThrow(() -> new ResourceNotFoundException("Screening not found with id: " + screeningId));
+
+        // This would need actual implementation based on your data model
+        // For now, returning a dummy implementation with row information and prices
+
+        // Get the theatre and screen information
+        Theatre theatre = screening.getTheatre();
+
+        // Create a simple layout with rows, seat counts, and price multipliers
+        Map<String, Object> layout = new HashMap<>();
+        layout.put("basePrice", screening.getBasePrice());
+
+        // Define some example rows with different price tiers
+        List<Map<String, Object>> rows = new ArrayList<>();
+
+        // Standard rows (A-E)
+        for (char rowChar = 'A'; rowChar <= 'E'; rowChar++) {
+            Map<String, Object> row = new HashMap<>();
+            row.put("name", String.valueOf(rowChar));
+            row.put("seatsCount", 10);
+            row.put("seatType", "STANDARD");
+            row.put("priceMultiplier", 1.0);
+            rows.add(row);
+        }
+
+        // Premium rows (F-H)
+        for (char rowChar = 'F'; rowChar <= 'H'; rowChar++) {
+            Map<String, Object> row = new HashMap<>();
+            row.put("name", String.valueOf(rowChar));
+            row.put("seatsCount", 10);
+            row.put("seatType", "PREMIUM");
+            row.put("priceMultiplier", 1.5);
+            rows.add(row);
+        }
+
+        // VIP row (I)
+        Map<String, Object> vipRow = new HashMap<>();
+        vipRow.put("name", "I");
+        vipRow.put("seatsCount", 8);
+        vipRow.put("seatType", "VIP");
+        vipRow.put("priceMultiplier", 2.0);
+        rows.add(vipRow);
+
+        // Wheelchair accessible row (J)
+        Map<String, Object> accessibleRow = new HashMap<>();
+        accessibleRow.put("name", "J");
+        accessibleRow.put("seatsCount", 6);
+        accessibleRow.put("seatType", "WHEELCHAIR");
+        accessibleRow.put("priceMultiplier", 1.0);
+        rows.add(accessibleRow);
+
+        layout.put("rows", rows);
+
+        return layout;
+    }
+    private Set<String> generateAllSeatsForScreen(Screening screening) {
+        Set<String> allSeats = new HashSet<>();
+
+        // Generate A1-J10 seats for demo purposes
+        for (char row = 'A'; row <= 'J'; row++) {
+            for (int seatNum = 1; seatNum <= 10; seatNum++) {
+                allSeats.add(row + String.valueOf(seatNum));
+            }
+        }
+
+        return allSeats;
     }
 
     @Transactional(readOnly = true)

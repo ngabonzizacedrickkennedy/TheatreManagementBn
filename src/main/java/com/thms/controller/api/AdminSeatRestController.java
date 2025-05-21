@@ -1,6 +1,8 @@
 package com.thms.controller.api;
 
 import com.thms.dto.ApiResponse;
+import com.thms.dto.SeatDTO;
+import com.thms.dto.TheatreDTO;
 import com.thms.exception.ResourceNotFoundException;
 import com.thms.model.Seat;
 import com.thms.model.Theatre;
@@ -14,6 +16,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/seats")
@@ -41,25 +45,25 @@ public class AdminSeatRestController {
     }
 
     @GetMapping("/theatre/{theatreId}/screen/{screenNumber}")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getSeatsByScreen(
-            @PathVariable("theatreId") Long theatreId, 
-            @PathVariable("screenNumber") Integer screenNumber) {
-        
-        Theatre theatre = theatreService.getTheatreEntityById(theatreId)
-                .orElseThrow(() -> new ResourceNotFoundException("Theatre", "id", theatreId));
-        
-        // Get seats grouped by row
-        Map<String, List<Seat>> seatsByRow = seatService.getSeatMapByTheatreAndScreen(theatreId, screenNumber);
-        
-        Map<String, Object> response = new HashMap<>();
-        response.put("theatre", theatre);
-        response.put("screenNumber", screenNumber);
-        response.put("seatsByRow", seatsByRow);
-        response.put("seatTypes", Arrays.asList(Seat.SeatType.values()));
-        
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
+    public ResponseEntity<?> getSeatsByScreen(@PathVariable Long theatreId, @PathVariable Integer screenNumber) {
+        TheatreDTO theatre = theatreService.getTheatreById(theatreId).orElseThrow(() -> new ResourceNotFoundException(theatreId+ "not found"));
 
+        List<Seat> seats = seatService.getSeatsByTheatreAndScreen(theatreId, screenNumber);
+
+        // Convert to DTOs to avoid circular references
+        List<SeatDTO> seatDTOs = seats.stream()
+                .map(seat -> new SeatDTO(
+                        seat.getId(),
+                        seat.getRowName(),
+                        seat.getSeatNumber(),
+                        seat.getScreenNumber(),
+                        seat.getSeatType().name(),
+                        seat.getPriceMultiplier()
+                ))
+                .collect(Collectors.toList());
+        System.out.println(seatDTOs);
+        return ResponseEntity.ok(seatDTOs);
+    }
     @PostMapping("/theatre/{theatreId}/screen/{screenNumber}/initialize")
     public ResponseEntity<ApiResponse<String>> initializeSeats(
             @PathVariable("theatreId") Long theatreId,
@@ -80,6 +84,7 @@ public class AdminSeatRestController {
         } catch (ResourceNotFoundException e) {
             throw e;
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Error initializing seats: " + e.getMessage()));
         }
@@ -162,6 +167,7 @@ public class AdminSeatRestController {
     public ResponseEntity<ApiResponse<String>> deleteScreenSeats(
             @PathVariable("theatreId") Long theatreId,
             @PathVariable("screenNumber") Integer screenNumber) {
+
         
         try {
             // Check if theatre exists
