@@ -10,6 +10,8 @@ import com.thms.repository.BookingRepository;
 import com.thms.repository.MovieRepository;
 import com.thms.repository.ScreeningRepository;
 import com.thms.repository.TheatreRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -403,4 +405,84 @@ public class ScreeningService implements IScreeningService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ScreeningDTO> getAllScreenings(Pageable pageable) {
+        Page<Screening> screeningPage = screeningRepository.findAll(pageable);
+        return screeningPage.map(this::convertToDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ScreeningDTO> getScreenings(Long movieId, Long theatreId, LocalDate date, Pageable pageable) {
+        Page<Screening> screeningPage;
+
+        if (movieId != null && theatreId != null && date != null) {
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+            screeningPage = screeningRepository.findByMovieIdAndTheatreIdAndStartTimeBetween(
+                    movieId, theatreId, startOfDay, endOfDay, pageable);
+        } else if (movieId != null && theatreId != null) {
+            screeningPage = screeningRepository.findByMovieIdAndTheatreId(movieId, theatreId, pageable);
+        } else if (movieId != null && date != null) {
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+            screeningPage = screeningRepository.findByMovieIdAndStartTimeBetween(
+                    movieId, startOfDay, endOfDay, pageable);
+        } else if (theatreId != null && date != null) {
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+            screeningPage = screeningRepository.findByTheatreIdAndStartTimeBetween(
+                    theatreId, startOfDay, endOfDay, pageable);
+        } else if (movieId != null) {
+            screeningPage = screeningRepository.findByMovieId(movieId, pageable);
+        } else if (theatreId != null) {
+            screeningPage = screeningRepository.findByTheatreId(theatreId, pageable);
+        } else if (date != null) {
+            LocalDateTime startOfDay = date.atStartOfDay();
+            LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
+            screeningPage = screeningRepository.findByStartTimeBetween(startOfDay, endOfDay, pageable);
+        } else {
+            screeningPage = screeningRepository.findByStartTimeAfter(LocalDateTime.now(), pageable);
+        }
+
+        return screeningPage.map(this::convertToDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ScreeningDTO> getScreeningsByMovie(Long movieId, Pageable pageable) {
+        return screeningRepository.findByMovieId(movieId, pageable).map(this::convertToDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ScreeningDTO> getScreeningsByTheatre(Long theatreId, Pageable pageable) {
+        return screeningRepository.findByTheatreId(theatreId, pageable).map(this::convertToDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ScreeningDTO> getScreeningsByMovieAndTheatre(Long movieId, Long theatreId, Pageable pageable) {
+        return screeningRepository.findByMovieIdAndTheatreId(movieId, theatreId, pageable).map(this::convertToDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ScreeningDTO> getScreeningsByDateRange(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
+        return screeningRepository.findByStartTimeBetween(startDate, endDate, pageable).map(this::convertToDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ScreeningDTO> getAvailableScreenings(Long movieId, Long theatreId, LocalDateTime startDate, Pageable pageable) {
+        return screeningRepository.findAvailableScreenings(movieId, theatreId, startDate, pageable).map(this::convertToDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ScreeningDTO> getUpcomingScreenings(LocalDateTime fromDateTime, Pageable pageable) {
+        return screeningRepository.findByStartTimeAfter(fromDateTime, pageable).map(this::convertToDTO);
+    }
+
 }

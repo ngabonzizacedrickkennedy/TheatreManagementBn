@@ -1,8 +1,11 @@
 package com.thms.service;
 
 import com.thms.dto.ScreeningDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,6 +60,12 @@ public interface IScreeningService {
      * Get seating layout for a screening
      */
     Object getSeatingLayout(Long screeningId);
-
-    // Add any admin-specific methods below if needed
+    Page<ScreeningDTO> getAllScreenings(Pageable pageable);
+    Page<ScreeningDTO> getScreenings(Long movieId, Long theatreId, LocalDate date, Pageable pageable);
+    Page<ScreeningDTO> getScreeningsByMovie(Long movieId, Pageable pageable);
+    Page<ScreeningDTO> getScreeningsByTheatre(Long theatreId, Pageable pageable);
+    Page<ScreeningDTO> getScreeningsByMovieAndTheatre(Long movieId, Long theatreId, Pageable pageable);
+    Page<ScreeningDTO> getScreeningsByDateRange(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable);
+    Page<ScreeningDTO> getAvailableScreenings(Long movieId, Long theatreId, LocalDateTime startDate, Pageable pageable);
+    Page<ScreeningDTO> getUpcomingScreenings(LocalDateTime fromDateTime, Pageable pageable);
 }

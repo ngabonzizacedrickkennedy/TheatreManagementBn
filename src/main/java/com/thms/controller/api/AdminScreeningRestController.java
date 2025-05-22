@@ -10,6 +10,10 @@ import com.thms.service.MovieService;
 import com.thms.service.ScreeningService;
 import com.thms.service.TheatreService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -187,5 +191,67 @@ public class AdminScreeningRestController {
                 .orElseThrow(() -> new ResourceNotFoundException("Screening", "id", id));
         
         return ResponseEntity.ok(ApiResponse.success(bookingService.getBookingsByScreeningId(id)));
+    }
+    @GetMapping
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getScreenings(
+            @RequestParam(required = false) Long movieId,
+            @RequestParam(required = false) Long theatreId,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+            @RequestParam(required = false, defaultValue = "startTime") String sortBy,
+            @RequestParam(required = false, defaultValue = "asc") String sortOrder,
+            @RequestParam(required = false, defaultValue = "0") int page,
+            @RequestParam(required = false, defaultValue = "10") int size) {
+
+        // Validate page and size parameters
+        if (page < 0) page = 0;
+        if (size < 1) size = 10;
+        if (size > 100) size = 100; // Limit maximum page size
+
+        // Create sort direction
+        Sort.Direction direction = "desc".equalsIgnoreCase(sortOrder) ?
+                Sort.Direction.DESC : Sort.Direction.ASC;
+
+        // Validate sort field
+        String validSortBy = validateSortField(sortBy);
+
+        // Create pageable object
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, validSortBy));
+
+        Page<ScreeningDTO> screeningPage = screeningService.getScreenings(movieId, theatreId, date, pageable);
+
+        // Prepare response with pagination metadata
+        Map<String, Object> response = new HashMap<>();
+        response.put("screenings", screeningPage.getContent());
+        response.put("currentPage", screeningPage.getNumber());
+        response.put("totalPages", screeningPage.getTotalPages());
+        response.put("totalElements", screeningPage.getTotalElements());
+        response.put("pageSize", screeningPage.getSize());
+        response.put("hasNext", screeningPage.hasNext());
+        response.put("hasPrevious", screeningPage.hasPrevious());
+        response.put("isFirst", screeningPage.isFirst());
+        response.put("isLast", screeningPage.isLast());
+
+        response.put("movies", movieService.getAllMovies());
+        response.put("theatres", theatreService.getAllTheatres());
+
+        // Add filter values if provided
+        if (movieId != null) response.put("selectedMovieId", movieId);
+        if (theatreId != null) response.put("selectedTheatreId", theatreId);
+        if (date != null) response.put("selectedDate", date);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    private String validateSortField(String sortBy) {
+        // Define allowed sort fields to prevent SQL injection
+        List<String> allowedFields = Arrays.asList(
+                "startTime", "endTime", "screenNumber", "format", "basePrice", "id"
+        );
+
+        if (allowedFields.contains(sortBy)) {
+            return sortBy;
+        }
+
+        return "startTime"; // Default fallback
     }
 } 
