@@ -117,4 +117,8 @@ public class UserService {
         // Don't set password in DTO for security reasons
         return dto;
     }
+
+    public Optional<User>  findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
 }
