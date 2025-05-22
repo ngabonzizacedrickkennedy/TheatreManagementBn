@@ -36,4 +36,23 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     Page<Movie> findMoviesWithFilters(@Param("title") String title,
                                       @Param("genre") Movie.Genre genre,
                                       Pageable pageable);
+
+    // New search methods for global search
+    @Query("SELECT m FROM Movie m WHERE " +
+            "LOWER(m.title) LIKE LOWER(CONCAT('%', :title, '%')) OR " +
+            "LOWER(m.director) LIKE LOWER(CONCAT('%', :director, '%')) OR " +
+            "LOWER(m.cast) LIKE LOWER(CONCAT('%', :cast, '%'))")
+    List<Movie> findByTitleContainingIgnoreCaseOrDirectorContainingIgnoreCaseOrCastContainingIgnoreCase(
+            @Param("title") String title,
+            @Param("director") String director,
+            @Param("cast") String cast,
+            Pageable pageable);
+
+    // Advanced search with multiple criteria
+    @Query("SELECT m FROM Movie m WHERE " +
+            "LOWER(m.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(m.director) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(m.cast) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(m.description) LIKE LOWER(CONCAT('%', :query, '%'))")
+    List<Movie> searchMovies(@Param("query") String query, Pageable pageable);
 }

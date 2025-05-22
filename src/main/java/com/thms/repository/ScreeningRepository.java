@@ -14,36 +14,29 @@ import java.util.List;
 @Repository
 public interface ScreeningRepository extends JpaRepository<Screening, Long> {
     List<Screening> findByMovieId(Long movieId);
-    
+
     List<Screening> findByTheatreId(Long theatreId);
-    
+
     List<Screening> findByMovieIdAndTheatreId(Long movieId, Long theatreId);
-    
+
     List<Screening> findByStartTimeAfterAndStartTimeBefore(LocalDateTime startDate, LocalDateTime endDate);
-    
+
     @Query("SELECT s FROM Screening s WHERE s.movie.id = :movieId AND s.theatre.id = :theatreId AND s.startTime >= :startDate ORDER BY s.startTime ASC")
     List<Screening> findAvailableScreenings(Long movieId, Long theatreId, LocalDateTime startDate);
-    
+
     @Query("SELECT COUNT(b) FROM Booking b WHERE b.screening.id = :screeningId")
     Long countBookingsByScreeningId(Long screeningId);
 
     List<Screening> findByStartTimeAfterOrderByStartTimeAsc(LocalDateTime startTime);
-    /**
-     * Find screenings by start time between ordered by start time
-     */
     List<Screening> findByStartTimeBetweenOrderByStartTimeAsc(LocalDateTime startTime, LocalDateTime endTime);
-
     List<Screening> findByStartTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
-
     List<Screening> findByTheatreIdAndStartTimeAfter(Long theatreId, LocalDateTime startTime);
-
     List<Screening> findByTheatreIdAndStartTimeBetween(Long theatreId, LocalDateTime starTime, LocalDateTime endTime);
-
     List<Screening> findByMovieIdAndStartTimeBetween(Long movieId, LocalDateTime startTime, LocalDateTime endTime);
-
     List<Screening> findByMovieIdAndTheatreIdAndStartTimeBetween(Long movieId, Long theatreId, LocalDateTime startTime, LocalDateTime endTime);
-
     List<Screening> findByStartTimeAfter(LocalDateTime starTime);
+
+    // Pagination versions
     Page<Screening> findByMovieId(Long movieId, Pageable pageable);
     Page<Screening> findByTheatreId(Long theatreId, Pageable pageable);
     Page<Screening> findByMovieIdAndTheatreId(Long movieId, Long theatreId, Pageable pageable);
@@ -60,4 +53,22 @@ public interface ScreeningRepository extends JpaRepository<Screening, Long> {
                                             @Param("theatreId") Long theatreId,
                                             @Param("startDate") LocalDateTime startDate,
                                             Pageable pageable);
+
+    // New search methods for global search
+    @Query("SELECT s FROM Screening s WHERE " +
+            "(LOWER(s.movie.title) LIKE LOWER(CONCAT('%', :movieTitle, '%')) OR " +
+            "LOWER(s.theatre.name) LIKE LOWER(CONCAT('%', :theatreName, '%'))) AND " +
+            "s.startTime > :startTime " +
+            "ORDER BY s.startTime ASC")
+    List<Screening> findByMovieTitleOrTheatreNameAndStartTimeAfter(
+            @Param("movieTitle") String movieTitle,
+            @Param("theatreName") String theatreName,
+            @Param("startTime") LocalDateTime startTime);
+
+    @Query("SELECT s FROM Screening s WHERE " +
+            "LOWER(s.movie.title) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(s.theatre.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(s.movie.director) LIKE LOWER(CONCAT('%', :query, '%')) " +
+            "ORDER BY s.startTime ASC")
+    List<Screening> searchScreenings(@Param("query") String query, Pageable pageable);
 }

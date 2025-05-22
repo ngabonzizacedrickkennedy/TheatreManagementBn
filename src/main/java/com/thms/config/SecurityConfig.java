@@ -50,41 +50,49 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // Disable CSRF as we're using JWT
-            .csrf(csrf -> csrf.disable())
-            
-            // Exception handling
-            .exceptionHandling(exception -> exception
-                .authenticationEntryPoint(jwtAuthEntryPoint))
-            
-            // Session management - stateless for REST API
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            
-            // Request authorization
-            .authorizeHttpRequests(auth -> auth
-                // Public API endpoints
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/v3/api-docs/**","/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/screenings/**").permitAll()
-                
-                // Admin API endpoints
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                
-                // Manager API endpoints
-                .requestMatchers("/api/manager/**").hasAnyRole("ADMIN", "MANAGER")
-                
-                // User API endpoints
-                .requestMatchers("/api/bookings/**").hasAnyRole("USER", "ADMIN", "MANAGER")
-                
-                // All other requests need authentication
-                .anyRequest().authenticated()
-            );
-            
+                // Disable CSRF as we're using JWT
+                .csrf(csrf -> csrf.disable())
+
+                // Exception handling
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint(jwtAuthEntryPoint))
+
+                // Session management - stateless for REST API
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // Request authorization
+                .authorizeHttpRequests(auth -> auth
+                        // Public API endpoints
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**","/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/screenings/**").permitAll()
+
+                        // Search endpoints - partially public
+                        .requestMatchers(HttpMethod.GET, "/api/search").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/search/movies").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/search/theatres").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/search/screenings").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/search/suggestions").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/search/users").hasRole("ADMIN") // Admin only
+
+                        // Admin API endpoints
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // Manager API endpoints
+                        .requestMatchers("/api/manager/**").hasAnyRole("ADMIN", "MANAGER")
+
+                        // User API endpoints
+                        .requestMatchers("/api/bookings/**").hasAnyRole("USER", "ADMIN", "MANAGER")
+
+                        // All other requests need authentication
+                        .anyRequest().authenticated()
+                );
+
         // Add JWT filter before UsernamePasswordAuthenticationFilter
         http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-        
+
         return http.build();
     }
 }
