@@ -16,10 +16,13 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -29,8 +32,8 @@ public class AuthRestController {
     private final JwtTokenProvider tokenProvider;
     private final UserService userService;
 
-    public AuthRestController(AuthenticationManager authenticationManager, 
-                              JwtTokenProvider tokenProvider, 
+    public AuthRestController(AuthenticationManager authenticationManager,
+                              JwtTokenProvider tokenProvider,
                               UserService userService) {
         this.authenticationManager = authenticationManager;
         this.tokenProvider = tokenProvider;
@@ -47,7 +50,12 @@ public class AuthRestController {
         String jwt = tokenProvider.generateToken(authentication);
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        LoginResponse loginResponse = new LoginResponse(jwt, userDetails.getUsername(), userDetails.getAuthorities().toString());
+        String roles = userDetails.getAuthorities().toString();
+
+        LoginResponse loginResponse = new LoginResponse(jwt, userDetails.getUsername(), roles);
+
+        // Log the roles for debugging
+        System.out.println("User " + userDetails.getUsername() + " logged in with roles: " + roles);
 
         return ResponseEntity.ok(ApiResponse.success(loginResponse, "User logged in successfully"));
     }
@@ -74,10 +82,10 @@ public class AuthRestController {
         userDTO.setFirstName(signupRequest.getFirstName());
         userDTO.setLastName(signupRequest.getLastName());
         userDTO.setPhoneNumber(signupRequest.getPhoneNumber());
-        
+
         UserDTO createdUser = userService.registerUser(userDTO);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(createdUser, "User registered successfully"));
     }
-} 
+}

@@ -41,30 +41,45 @@ public class HomeRestController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> home() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Set<String> roles = AuthorityUtils.authorityListToSet(authentication.getAuthorities());
-        
+
         Map<String, Object> response = new HashMap<>();
-        
+
+        // Check user roles and redirect accordingly
         if (roles.contains("ROLE_ADMIN") || roles.contains("ROLE_MANAGER")) {
-            response.put("redirect", "/api/admin/dashboard");
+            response.put("redirect", "/admin");
+            response.put("isAdmin", true);
+            response.put("userRole", roles.contains("ROLE_ADMIN") ? "ADMIN" : "MANAGER");
             return ResponseEntity.ok(ApiResponse.success(response));
         }
-        
-        LocalDateTime now = LocalDateTime.now();
-        List<ScreeningDTO> upcomingScreenings = screeningService.getUpcomingScreenings(now);
 
-        // Group screenings by movie
-        Map<Long, List<ScreeningDTO>> screeningsByMovie = upcomingScreenings.stream()
-                .collect(Collectors.groupingBy(ScreeningDTO::getMovieId));
+        // For regular users, return the home page data
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            List<ScreeningDTO> upcomingScreenings = screeningService.getUpcomingScreenings(now);
 
-        // Get all current movies that have screenings
-        List<MovieDTO> moviesWithScreenings = movieService.getMoviesByIds(screeningsByMovie.keySet());
+            // Group screenings by movie
+            Map<Long, List<ScreeningDTO>> screeningsByMovie = upcomingScreenings.stream()
+                    .collect(Collectors.groupingBy(ScreeningDTO::getMovieId));
 
-        // Get upcoming movies (with future release dates)
-        List<MovieDTO> upcomingMovies = movieService.getUpcomingMovies();
+            // Get all current movies that have screenings
+            List<MovieDTO> moviesWithScreenings = movieService.getMoviesByIds(screeningsByMovie.keySet());
 
-        response.put("nowPlaying", moviesWithScreenings);
-        response.put("screeningsByMovie", screeningsByMovie);
-        response.put("upcoming", upcomingMovies);
+            // Get upcoming movies (with future release dates)
+            List<MovieDTO> upcomingMovies = movieService.getUpcomingMovies();
+
+            response.put("nowPlaying", moviesWithScreenings);
+            response.put("screeningsByMovie", screeningsByMovie);
+            response.put("upcoming", upcomingMovies);
+            response.put("isAdmin", false);
+            response.put("userRole", "USER");
+        } catch (Exception e) {
+            // If there's an error, return basic response
+            response.put("nowPlaying", List.of());
+            response.put("screeningsByMovie", Map.of());
+            response.put("upcoming", List.of());
+            response.put("isAdmin", false);
+            response.put("userRole", "USER");
+        }
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -75,7 +90,7 @@ public class HomeRestController {
         aboutInfo.put("name", "Theatre Management System");
         aboutInfo.put("description", "A state-of-the-art system for managing theatre operations");
         aboutInfo.put("version", "1.0.0");
-        
+
         return ResponseEntity.ok(ApiResponse.success(aboutInfo));
     }
 
@@ -83,7 +98,7 @@ public class HomeRestController {
     public ResponseEntity<ApiResponse<String>> contact() {
         return ResponseEntity.ok(ApiResponse.success("Contact form is available"));
     }
-    
+
     @PostMapping("/contact")
     public ResponseEntity<ApiResponse<String>> processContactForm(@Valid @RequestBody ContactRequestDTO contactRequest) {
         // In a real application, you would process the form data here
@@ -91,4 +106,4 @@ public class HomeRestController {
 
         return ResponseEntity.ok(ApiResponse.success(null, "Thank you for your message! We'll get back to you shortly."));
     }
-} 
+}

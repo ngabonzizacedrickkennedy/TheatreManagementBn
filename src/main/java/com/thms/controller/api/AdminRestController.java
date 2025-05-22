@@ -3,15 +3,10 @@ package com.thms.controller.api;
 import com.thms.dto.ApiResponse;
 import com.thms.dto.BookingDTO;
 import com.thms.dto.MovieDTO;
-import com.thms.dto.UserDTO;
-import com.thms.exception.ResourceNotFoundException;
-import com.thms.model.Booking;
 import com.thms.service.BookingService;
 import com.thms.service.MovieService;
 import com.thms.service.TheatreService;
 import com.thms.service.UserService;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +29,7 @@ public class AdminRestController {
     private final BookingService bookingService;
 
     public AdminRestController(UserService userService, MovieService movieService,
-                              TheatreService theatreService, BookingService bookingService) {
+                               TheatreService theatreService, BookingService bookingService) {
         this.userService = userService;
         this.movieService = movieService;
         this.theatreService = theatreService;
@@ -44,7 +39,7 @@ public class AdminRestController {
     @GetMapping("/dashboard")
     public ResponseEntity<ApiResponse<Map<String, Object>>> dashboard() {
         Map<String, Object> dashboardData = new HashMap<>();
-        
+
         // Total counts for dashboard cards
         dashboardData.put("totalUsers", userService.getAllUsers().size());
         dashboardData.put("totalMovies", movieService.getAllMovies().size());
@@ -58,12 +53,8 @@ public class AdminRestController {
                 .collect(Collectors.toList());
         dashboardData.put("recentBookings", recentBookings);
 
-        // Get new users (last 5)
-        List<UserDTO> newUsers = userService.getAllUsers().stream()
-                .sorted(Comparator.comparing(UserDTO::getId).reversed())  // Assuming newer users have higher IDs
-                .limit(5)
-                .collect(Collectors.toList());
-        dashboardData.put("newUsers", newUsers);
+        // Get new users (last 5) - Remove the detailed user methods, just get count
+        dashboardData.put("newUsersCount", userService.getAllUsers().size());
 
         // Get popular movies (movies with most bookings)
         List<MovieDTO> popularMovies = movieService.getAllMovies().stream()
@@ -78,13 +69,13 @@ public class AdminRestController {
 
         // Get booking statistics by status
         long completedBookings = bookingService.getAllBookings().stream()
-                .filter(b -> b.getPaymentStatus() == Booking.PaymentStatus.COMPLETED)
+                .filter(b -> b.getPaymentStatus() == com.thms.model.Booking.PaymentStatus.COMPLETED)
                 .count();
         long pendingBookings = bookingService.getAllBookings().stream()
-                .filter(b -> b.getPaymentStatus() == Booking.PaymentStatus.PENDING)
+                .filter(b -> b.getPaymentStatus() == com.thms.model.Booking.PaymentStatus.PENDING)
                 .count();
         long cancelledBookings = bookingService.getAllBookings().stream()
-                .filter(b -> b.getPaymentStatus() == Booking.PaymentStatus.CANCELLED)
+                .filter(b -> b.getPaymentStatus() == com.thms.model.Booking.PaymentStatus.CANCELLED)
                 .count();
 
         Map<String, Long> bookingStats = new HashMap<>();
@@ -96,38 +87,12 @@ public class AdminRestController {
         return ResponseEntity.ok(ApiResponse.success(dashboardData));
     }
 
-    @GetMapping("/users")
-    public ResponseEntity<ApiResponse<List<UserDTO>>> getUsers() {
-        List<UserDTO> users = userService.getAllUsers();
-        return ResponseEntity.ok(ApiResponse.success(users));
-    }
+    // REMOVED: All user-related methods should be handled by AdminUsersRestController
+    // The following methods have been removed to avoid ambiguous mapping:
+    // - getUsers()
+    // - getUserDetails()
+    // - updateUser()
+    // - deleteUser()
 
-    @GetMapping("/users/{id}")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getUserDetails(@PathVariable("id") Long id) {
-        UserDTO user = userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("user", user);
-        response.put("bookings", bookingService.getBookingsByUser(id));
-        
-        return ResponseEntity.ok(ApiResponse.success(response));
-    }
-
-    @PutMapping("/users/{id}")
-    public ResponseEntity<ApiResponse<UserDTO>> updateUser(
-            @PathVariable("id") Long id,
-            @Valid @RequestBody UserDTO userDTO) {
-        
-        UserDTO updatedUser = userService.updateUser(id, userDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
-                
-        return ResponseEntity.ok(ApiResponse.success(updatedUser, "User updated successfully"));
-    }
-
-    @DeleteMapping("/users/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable("id") Long id) {
-        userService.deleteUser(id);
-        return ResponseEntity.ok(ApiResponse.success(null, "User deleted successfully"));
-    }
-} 
+    // These methods are now exclusively handled by AdminUsersRestController
+}
